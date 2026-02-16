@@ -86,19 +86,51 @@ Agentbase will operate with multiple revenue streams:
 - Integrated solutions with technology partners
 - Marketplace advertising for vendors
 
-## Future Plans
+## Future Plans & Identified Gaps
 
-### Identified Gaps to Address
+These features are planned for future phases to expand Agentbase's capabilities:
 
-1. **Sponsorship & Advertising Platform** - Add dedicated advertising space in marketplace and community platform for AI-related companies to reach developers
-2. **Visual App Builder** - No-code/low-code interface for non-technical users to create AI applications using drag-and-drop components
-3. **Application Templates** - Pre-built templates for common use cases (AI chatbot, content generator, image analyzer, etc.) that users can deploy instantly
-4. **Native TensorFlow/PyTorch Support** - Direct integration for deploying custom TensorFlow and PyTorch models beyond HuggingFace
-5. **Website vs Application Framework** - Clarify positioning: focus on AI-powered websites first (like WordPress), then expand to broader applications
+1. **Sponsorship & Advertising Platform**
+   - Dedicated advertising space in marketplace and community
+   - Revenue opportunities for AI-related companies to reach developers
+   - Implemented in Phase 6
+
+2. **Visual App Builder (No-Code Interface)**
+   - Drag-and-drop interface for non-technical users
+   - Pre-built components for AI applications
+   - Visual workflow designer for AI interactions
+   - Implemented in Phase 6 (Section 6.2b)
+
+3. **Application Templates**
+   - Pre-built templates for common use cases
+   - One-click deployment options
+   - Templates include: AI chatbot, content generator, image analyzer, data analyzer, customer support bot
+   - Implemented in Phase 6 (Section 6.2)
+
+4. **Native TensorFlow/PyTorch Support**
+   - Direct integration for deploying custom models
+   - Beyond HuggingFace integration
+   - Custom model serving infrastructure
+   - Implemented in Phase 5 (Section 5.1)
+
+5. **Product Positioning Clarity**
+   - Phase 1-2: Focus on AI-powered websites (WordPress-like)
+   - Phase 3+: Expand to broader AI application framework
+   - Clear migration path for users
 
 ## License
 
-Agentbase should be released under an open-source license, allowing developers to freely use, modify, and distribute the software. This would encourage collaboration and innovation within the community, as well as provide transparency and trust in the platform. The license should match that of WordPress, which is the GNU General Public License (GPL). This would ensure that Agentbase remains free and open for all users, while also allowing for commercial use and distribution.
+**GNU General Public License v3.0 (GPL-3.0-or-later)**
+
+Agentbase is released under an open-source license matching WordPress, ensuring:
+
+- **Freedom to Use:** Freely use, modify, and distribute the software
+- **Community Collaboration:** Encourages innovation and community contributions
+- **Transparency:** Provides trust and transparency in the platform
+- **Commercial Use:** Allows commercial use and distribution
+- **Copyleft:** Derivative works must also be GPL-licensed
+
+This license ensures Agentbase remains free and open for all users while fostering a collaborative ecosystem.
 
 ## Plan
 
