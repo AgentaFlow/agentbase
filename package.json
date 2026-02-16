@@ -1,0 +1,33 @@
+{
+  "name": "agentbase",
+  "version": "0.1.0",
+  "private": true,
+  "description": "WordPress modernized for AI - Build AI-first applications effortlessly",
+  "license": "GPL-3.0-or-later",
+  "author": "AgentaFlow",
+  "scripts": {
+    "dev": "concurrently \"pnpm --filter @agentbase/core dev\" \"pnpm --filter @agentbase/frontend dev\" \"pnpm --filter @agentbase/ai-service dev\"",
+    "dev:core": "pnpm --filter @agentbase/core dev",
+    "dev:frontend": "pnpm --filter @agentbase/frontend dev",
+    "dev:ai": "pnpm --filter @agentbase/ai-service dev",
+    "build": "pnpm -r build",
+    "build:core": "pnpm --filter @agentbase/core build",
+    "build:frontend": "pnpm --filter @agentbase/frontend build",
+    "test": "pnpm -r test",
+    "test:core": "pnpm --filter @agentbase/core test",
+    "lint": "pnpm -r lint",
+    "db:migrate": "pnpm --filter @agentbase/core migration:run",
+    "db:seed": "pnpm --filter @agentbase/core seed",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "clean": "pnpm -r exec rm -rf node_modules dist .next .turbo"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0",
+    "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}
