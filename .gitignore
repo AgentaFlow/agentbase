@@ -208,7 +208,6 @@ __marimo__/
 
 # Node.js / NPM
 node_modules/
-.pnpm-debug.log*
 
 # Yarn
 .yarn/*
