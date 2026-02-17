@@ -43,7 +43,7 @@ Agentbase uses a **hybrid architecture** combining the best of Node.js and Pytho
   - PostgreSQL for structured data (users, plugins, themes, billing)
   - MongoDB for flexible AI content (prompts, conversations, model configs)
 - **AI Integration:** OpenAI, Anthropic, HuggingFace, TensorFlow, PyTorch
-- **Infrastructure:** Docker, Kubernetes-ready
+- **Infrastructure:** Docker, Kubernetes-ready, DigitalOcean (production hosting)
 
 This hybrid approach provides the stability and developer experience of Node.js for the core platform while leveraging Python's superior ML/AI library ecosystem for AI-specific features.
 
@@ -114,7 +114,7 @@ Agentbase is built as a hybrid architecture platform with Node.js/TypeScript han
 - **Frontend:** Next.js 14+ with TypeScript
 - **Databases:** PostgreSQL (core data) + MongoDB (AI content)
 - **AI Integration:** OpenAI, Anthropic, Gemini, HuggingFace support
-- **Infrastructure:** Docker, Kubernetes-ready
+- **Infrastructure:** Docker, DigitalOcean Kubernetes (DOKS), Terraform
 - **License:** GNU GPL v3
 
 ### Architecture Decisions
@@ -128,6 +128,7 @@ Agentbase is built as a hybrid architecture platform with Node.js/TypeScript han
 - **Hook-based plugin system:** Proven pattern from WordPress, familiar to target developers
 - **API-first design:** Clean separation enables multiple frontends and third-party integrations
 - **Docker from start:** Consistent development and simplified deployment
+- **DigitalOcean + Terraform:** Cost-effective managed Kubernetes (DOKS) with infrastructure as code for reproducible deployments
 - **GPL license:** Matches WordPress, encourages community contributions, allows commercial use
 
 ### Development Timeline
@@ -1086,45 +1087,96 @@ Agentbase is built as a hybrid architecture platform with Node.js/TypeScript han
   - [ ] Track activations per key
 - [ ] Test complete purchase flow
 
-#### 4.4 Infrastructure & Deployment
-- [ ] Choose cloud provider (AWS, GCP, or Azure)
-- [ ] Create infrastructure as code:
-  - [ ] Set up Terraform project
-  - [ ] Define VPC and networking
-  - [ ] Define compute resources (ECS, GKE, or AKS)
-  - [ ] Define managed databases (RDS, Cloud SQL)
-  - [ ] Define object storage (S3, GCS, Azure Blob)
-  - [ ] Define CDN configuration
-- [ ] Create Kubernetes manifests:
-  - [ ] Deployment configs for each service
-  - [ ] Service definitions
-  - [ ] Ingress controller setup
-  - [ ] ConfigMaps for configuration
-  - [ ] Secrets for sensitive data
+#### 4.4 Infrastructure & Deployment (Digital Ocean + Terraform)
+- [x] Choose cloud provider: **Digital Ocean**
+- [ ] Create Terraform infrastructure as code (`/infrastructure` directory):
+  - [ ] Set up Terraform project structure:
+    - [ ] Create `main.tf`, `variables.tf`, `outputs.tf`
+    - [ ] Configure DigitalOcean provider
+    - [ ] Set up remote state (DO Spaces or Terraform Cloud)
+    - [ ] Create environments (staging, production)
+  - [ ] Define VPC and networking:
+    - [ ] Create VPC with private networking
+    - [ ] Configure firewall rules
+    - [ ] Set up CloudFlare or DO DNS
+  - [ ] Define compute resources:
+    - [ ] Create DigitalOcean Kubernetes (DOKS) cluster
+    - [ ] Configure node pools (different sizes for different workloads)
+    - [ ] Set up auto-scaling for node pools
+  - [ ] Define managed databases:
+    - [ ] PostgreSQL managed database cluster
+    - [ ] MongoDB managed database cluster (or MongoDB Atlas)
+    - [ ] Redis managed database cluster
+    - [ ] Configure automated backups
+    - [ ] Set up database firewall rules
+  - [ ] Define object storage:
+    - [ ] Create DigitalOcean Spaces bucket
+    - [ ] Configure CORS and access policies
+    - [ ] Set up CDN endpoint for Spaces
+  - [ ] Define load balancer:
+    - [ ] Create DigitalOcean Load Balancer
+    - [ ] Configure SSL/TLS termination
+    - [ ] Set up health checks
+    - [ ] Configure sticky sessions if needed
+  - [ ] Define CDN configuration:
+    - [ ] Enable CDN on Spaces
+    - [ ] Configure cache rules
+    - [ ] Set up custom domain for CDN
+- [ ] Create Kubernetes manifests (`/k8s` directory):
+  - [ ] Deployment configs for each service:
+    - [ ] Core API deployment
+    - [ ] AI Service deployment
+    - [ ] Frontend deployment
+  - [ ] Service definitions (ClusterIP, LoadBalancer)
+  - [ ] Ingress controller setup:
+    - [ ] Install NGINX Ingress Controller
+    - [ ] Configure ingress rules
+    - [ ] Set up cert-manager for Let's Encrypt SSL
+  - [ ] ConfigMaps for configuration:
+    - [ ] Environment-specific configs
+    - [ ] Feature flags
+  - [ ] Secrets management:
+    - [ ] Sealed Secrets or External Secrets Operator
+    - [ ] Database credentials
+    - [ ] API keys encryption
 - [ ] Configure auto-scaling:
-  - [ ] Horizontal Pod Autoscaler
-  - [ ] Cluster autoscaler
-  - [ ] Load balancer configuration
+  - [ ] Horizontal Pod Autoscaler (HPA):
+    - [ ] CPU-based scaling for core API
+    - [ ] Memory-based scaling for AI service
+    - [ ] Custom metrics scaling (request rate)
+  - [ ] DOKS cluster autoscaler (node pool scaling)
+  - [ ] Load balancer configuration for distribution
 - [ ] Add health checks and readiness probes:
   - [ ] Liveness probes for all services
   - [ ] Readiness probes for all services
   - [ ] Startup probes for slow-starting services
-- [ ] Implement blue-green deployment:
-  - [ ] Deploy new version alongside old
-  - [ ] Switch traffic gradually
-  - [ ] Rollback capability
+- [ ] Implement deployment strategy:
+  - [ ] Rolling updates with maxSurge/maxUnavailable
+  - [ ] Blue-green deployment setup (optional)
+  - [ ] Rollback capability via Kubernetes
 - [ ] Set up CDN for static assets:
-  - [ ] CloudFront, Cloud CDN, or Azure CDN
-  - [ ] Cache configuration
-  - [ ] Invalidation strategy
-- [ ] Deploy staging environment
-- [ ] Test deployment process
+  - [ ] DigitalOcean Spaces CDN for uploads
+  - [ ] CloudFlare CDN for frontend assets (recommended)
+  - [ ] Cache configuration and invalidation
+- [ ] Deploy staging environment:
+  - [ ] Separate DOKS cluster or namespace
+  - [ ] Staging database replicas
+  - [ ] Staging domain setup
+- [ ] Create deployment automation:
+  - [ ] GitHub Actions workflow for Terraform
+  - [ ] GitHub Actions workflow for Kubernetes deployment
+  - [ ] Automated database migrations
+- [ ] Test deployment process:
+  - [ ] Test Terraform apply/destroy
+  - [ ] Test zero-downtime deployments
+  - [ ] Test rollback procedures
+  - [ ] Disaster recovery testing
 
 #### 4.5 Monitoring & Observability
 - [ ] Integrate logging:
   - [ ] Winston/Pino for Node.js services
   - [ ] Structlog for Python services
-  - [ ] Centralize logs (CloudWatch, Stackdriver, or ELK)
+  - [ ] Centralize logs (ELK Stack, Loki, or DigitalOcean Logging)
 - [ ] Add metrics collection:
   - [ ] Instrument code with Prometheus client
   - [ ] Expose metrics endpoints
