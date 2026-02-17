@@ -136,6 +136,8 @@ Agentbase is built as a hybrid architecture platform with Node.js/TypeScript han
 **Total Estimated Timeline:** 6-12 months (MVP in 2-3 months)  
 **Recommended Team Size:** 2-4 developers
 
+> **Note:** This project plan was last reviewed and updated on February 17, 2026. Checkboxes reflect the current implementation status based on a comprehensive repository review. Significant progress has been made beyond the original Phase 2 MVP plan, with additional modules implemented including API Keys, Analytics, Billing, Webhooks, Audit, Uploads, Admin, Prompts, and Embeddable Widget functionality.
+
 ---
 
 ## Phase 1: Foundation & Project Setup
@@ -692,10 +694,10 @@ Agentbase is built as a hybrid architecture platform with Node.js/TypeScript han
 - [x] Create plugin registry endpoints:
   - [x] `GET /api/plugins` - List all plugins
   - [x] `GET /api/plugins/:id` - Get plugin details
-  - [x] `POST /api/plugins/install` - Install plugin
-  - [x] `PUT /api/plugins/:id/activate` - Activate plugin
-  - [x] `PUT /api/plugins/:id/deactivate` - Deactivate plugin
-  - [x] `DELETE /api/plugins/:id` - Uninstall plugin
+  - [x] `POST /api/applications/:appId/plugins` - Install plugin
+  - [x] `PUT /api/applications/:appId/plugins/:id/activate` - Activate plugin
+  - [x] `PUT /api/applications/:appId/plugins/:id/deactivate` - Deactivate plugin
+  - [x] `DELETE /api/applications/:appId/plugins/:id` - Uninstall plugin
 - [ ] Write API documentation for plugin system
 - [ ] Write unit tests for plugin lifecycle
 - [ ] Write integration tests for plugin endpoints
@@ -715,7 +717,7 @@ Agentbase is built as a hybrid architecture platform with Node.js/TypeScript han
   - [x] `makeRequest()` - HTTP client for API calls
 - [x] Create example plugins:
   - [x] Hello World plugin (minimal example)
-  - [ ] Simple AI Chat plugin (AI integration example)
+  - [x] Simple AI Chat plugin (AI integration example)
   - [ ] Custom API endpoint plugin (API extension example)
 - [ ] Write plugin development guide
 - [ ] Create plugin development CLI tool:
@@ -728,23 +730,24 @@ Agentbase is built as a hybrid architecture platform with Node.js/TypeScript han
 - [x] Design theme manifest JSON schema (layouts, styles, variables)
 - [x] Create Theme entity and database schema
 - [x] Create theme registry service
-- [ ] Implement theme loader and renderer
-- [ ] Build theme customization API:
-  - [ ] Color scheme customization
-  - [ ] Typography settings
-  - [ ] Layout options
+- [x] Implement theme loader and renderer
+- [x] Build theme customization API:
+  - [x] Color scheme customization
+  - [x] Typography settings
+  - [x] Layout options
 - [x] Create theme endpoints:
   - [x] `GET /api/themes` - List available themes
   - [x] `GET /api/themes/:id` - Get theme details
-  - [ ] `POST /api/applications/:id/theme` - Set application theme
-  - [ ] `PUT /api/applications/:id/theme/customize` - Customize theme
-- [ ] Create starter theme with common components:
-  - [ ] Base layout template
-  - [ ] Navigation component
-  - [ ] Footer component
-  - [ ] Chat interface component
-- [ ] Implement theme preview functionality
-- [ ] Add theme switching capability
+  - [x] `POST /api/applications/:id/theme` - Set application theme
+  - [x] `PUT /api/applications/:id/theme/customize` - Customize theme
+- [x] Create starter theme with common components:
+  - [x] Base layout template
+  - [x] Navigation component
+  - [x] Footer component
+  - [x] Chat interface component
+  - [x] Theme presets (Default, Dark, Minimal, Vibrant)
+- [x] Implement theme preview functionality
+- [x] Add theme switching capability
 - [ ] Write theme development guide
 - [ ] Write unit tests for theme system
 
@@ -862,6 +865,15 @@ Agentbase is built as a hybrid architecture platform with Node.js/TypeScript han
   - [x] Prompt template CRUD
   - [x] Prompt service and controller
   - [x] Template variable substitution
+- [x] **Embeddable Widget & Public API:**
+  - [x] Embeddable chat widget (widget.js)
+  - [x] Public API for chat interactions
+  - [x] API key-based authentication for widget
+  - [x] Theme support in widget
+  - [x] Customizable widget positioning and colors
+  - [x] Embed code generator component
+  - [x] Rate limiting for public API
+  - [x] Analytics tracking for widget usage
 
 #### 2.8 Integration & Testing
 - [ ] Connect frontend to backend authentication
@@ -910,29 +922,30 @@ Agentbase is built as a hybrid architecture platform with Node.js/TypeScript han
 - [ ] Test installation on macOS
 
 #### 3.2 Plugin Marketplace Backend
-- [ ] Enhance Plugin schema with marketplace fields:
-  - [ ] Description, screenshots, changelog
-  - [ ] Author information
-  - [ ] Pricing (free/paid)
-  - [ ] Download count, rating
-- [ ] Create plugin/theme listing endpoints:
-  - [ ] `GET /api/marketplace/plugins` - Browse plugins
-  - [ ] `GET /api/marketplace/plugins/:id` - Plugin details
+- [x] Enhance Plugin schema with marketplace fields:
+  - [x] Description, screenshots, changelog
+  - [x] Author information
+  - [x] Pricing (free/paid)
+  - [x] Download count, rating
+- [x] Create plugin/theme listing endpoints:
+  - [x] `GET /api/marketplace/browse` - Browse plugins
+  - [x] `GET /api/marketplace/plugins/:id` - Plugin details
+  - [x] `GET /api/marketplace/featured` - Featured plugins
   - [ ] `GET /api/marketplace/themes` - Browse themes
   - [ ] `GET /api/marketplace/themes/:id` - Theme details
 - [ ] Implement versioning system:
   - [ ] Multiple versions per plugin
   - [ ] Version comparison
   - [ ] Compatibility checking
-- [ ] Build search and filtering:
-  - [ ] Full-text search
-  - [ ] Filter by category, price, rating
-  - [ ] Sort by popularity, date, rating
-- [ ] Create rating and review system:
-  - [ ] Add review endpoint
-  - [ ] Update review endpoint
-  - [ ] Calculate average rating
-  - [ ] Show review count
+- [x] Build search and filtering:
+  - [x] Full-text search
+  - [x] Filter by category, price, rating
+  - [x] Sort by popularity, date, rating
+- [x] Create rating and review system:
+  - [x] Add review endpoint
+  - [x] Update review endpoint
+  - [x] Calculate average rating
+  - [x] Show review count
 - [ ] Add download/installation tracking
 - [ ] Create developer submission portal:
   - [ ] Submit plugin form

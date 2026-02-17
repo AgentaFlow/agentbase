@@ -282,3 +282,4 @@ vite.config.ts.timestamp-*
 
 # Storybook
 storybook-static/
+.claude/CLAUDE_REVIEW.md
