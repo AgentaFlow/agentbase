@@ -17,6 +17,9 @@ import { PublicApiModule } from './modules/applications/public-api.module';
 import { BillingModule } from './modules/billing/billing.module';
 import { WebhooksModule } from './modules/webhooks/webhooks.module';
 import { MarketplaceModule } from './modules/marketplace/marketplace.module';
+import { EmailModule } from './modules/email/email.module';
+import { UploadsModule } from './modules/uploads/uploads.module';
+import { AuditModule } from './modules/audit/audit.module';
 
 @Module({
   imports: [
@@ -71,6 +74,9 @@ import { MarketplaceModule } from './modules/marketplace/marketplace.module';
     BillingModule,
     WebhooksModule,
     MarketplaceModule,
+    EmailModule,
+    UploadsModule,
+    AuditModule,
   ],
 })
 export class AppModule {}

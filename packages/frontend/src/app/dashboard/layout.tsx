@@ -19,6 +19,7 @@ const navItems = [
 
 const adminNavItems = [
   { href: '/dashboard/admin', label: 'Admin Panel', icon: '🛡️' },
+  { href: '/dashboard/audit', label: 'Audit Log', icon: '📋' },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {

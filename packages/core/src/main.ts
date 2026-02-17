@@ -1,19 +1,52 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe, Logger } from '@nestjs/common';
+import { ValidationPipe, Logger, VersioningType } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import helmet from 'helmet';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
-  const app = await NestFactory.create(AppModule);
+  const isProd = process.env.NODE_ENV === 'production';
+
+  const app = await NestFactory.create(AppModule, {
+    logger: isProd ? ['error', 'warn', 'log'] : ['error', 'warn', 'log', 'debug', 'verbose'],
+    // Enable raw body for Stripe webhook verification
+    rawBody: true,
+  });
 
   // Global prefix
   app.setGlobalPrefix('api');
 
+  // Security headers (helmet)
+  try {
+    app.use(helmet({
+      contentSecurityPolicy: isProd ? undefined : false,
+      crossOriginEmbedderPolicy: false,
+    }));
+  } catch {
+    logger.warn('Helmet not available — skipping security headers');
+  }
+
   // CORS
+  const allowedOrigins = [
+    process.env.FRONTEND_URL || 'http://localhost:3000',
+    'http://localhost:3000',
+  ];
+
   app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, curl, etc.)
+      if (!origin) return callback(null, true);
+      // Allow configured origins
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      // Allow widget requests (any origin with API key auth)
+      if (origin) return callback(null, true);
+      callback(new Error('Not allowed by CORS'));
+    },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key', 'X-Request-ID'],
+    exposedHeaders: ['X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset'],
   });
 
   // Validation
@@ -22,31 +55,51 @@ async function bootstrap() {
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
+      transformOptions: { enableImplicitConversion: true },
     }),
   );
 
-  // Swagger/OpenAPI Documentation
-  const config = new DocumentBuilder()
-    .setTitle('Agentbase API')
-    .setDescription('The Agentbase platform API - WordPress for AI Applications')
-    .setVersion('0.1.0')
-    .addBearerAuth()
-    .addTag('auth', 'Authentication endpoints')
-    .addTag('users', 'User management')
-    .addTag('applications', 'AI application management')
-    .addTag('plugins', 'Plugin system')
-    .addTag('themes', 'Theme system')
-    .addTag('health', 'Health checks')
-    .build();
+  // Trust proxy (for rate limiting behind nginx)
+  const expressApp = app.getHttpAdapter().getInstance();
+  expressApp.set('trust proxy', 1);
 
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document);
+  // Swagger/OpenAPI Documentation (disable in production if desired)
+  if (!isProd || process.env.ENABLE_SWAGGER === 'true') {
+    const config = new DocumentBuilder()
+      .setTitle('Agentbase API')
+      .setDescription('The Agentbase platform API — WordPress for AI Applications')
+      .setVersion('1.0.0')
+      .addBearerAuth()
+      .addApiKey({ type: 'apiKey', in: 'header', name: 'X-API-Key' }, 'api-key')
+      .addTag('auth', 'Authentication endpoints')
+      .addTag('users', 'User management')
+      .addTag('applications', 'AI application management')
+      .addTag('plugins', 'Plugin system')
+      .addTag('themes', 'Theme system')
+      .addTag('billing', 'Subscription & billing')
+      .addTag('webhooks', 'Webhook management')
+      .addTag('marketplace', 'Plugin marketplace')
+      .addTag('analytics', 'Analytics & metrics')
+      .addTag('audit', 'Audit logging')
+      .addTag('uploads', 'File uploads')
+      .addTag('health', 'Health checks')
+      .build();
+
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('api/docs', app, document);
+  }
+
+  // Graceful shutdown
+  app.enableShutdownHooks();
 
   const port = process.env.APP_PORT || 3001;
   await app.listen(port);
 
   logger.log(`🚀 Agentbase API running on http://localhost:${port}`);
-  logger.log(`📚 API docs at http://localhost:${port}/api/docs`);
+  if (!isProd || process.env.ENABLE_SWAGGER === 'true') {
+    logger.log(`📚 API docs at http://localhost:${port}/api/docs`);
+  }
+  logger.log(`🔧 Environment: ${process.env.NODE_ENV || 'development'}`);
 }
 
 bootstrap();

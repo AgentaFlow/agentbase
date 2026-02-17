@@ -383,3 +383,104 @@ Built by [AgentaFlow](https://agentaflow.com)
 - Added Marketplace, Billing, and Webhooks to sidebar
 - Reordered: Overview → Applications → Marketplace → Analytics → Billing → Webhooks → My Plugins → Themes → Settings
 - Admin Panel still conditionally shown for admin users
+
+---
+
+## Phase 5 Additions
+
+### Docker Production Deployment
+- **Multi-stage Dockerfiles** for Core API, Frontend, and AI Service with:
+  - Alpine/slim base images for minimal footprint
+  - Non-root user (`agentbase`) for security
+  - `tini` init process for proper signal handling
+  - Health checks on all containers
+  - pnpm workspace-aware builds
+- **`docker-compose.prod.yml`** — Full production stack: Postgres 16, MongoDB 7, Redis 7, Core API, AI Service, Frontend, Nginx reverse proxy
+  - All database services with health checks and persistent volumes
+  - Environment-variable driven configuration
+  - Service dependency ordering with health conditions
+
+### Nginx Reverse Proxy
+- SSL termination (TLS 1.2/1.3) with configurable certs
+- HTTP → HTTPS redirect with ACME challenge passthrough
+- Security headers: HSTS, X-Frame-Options, X-Content-Type-Options, CSP, Permissions-Policy
+- Rate limiting zones: API (30 req/s), Auth (5 req/s), Webhooks (10 req/s)
+- SSE streaming support for AI service (proxy_buffering off)
+- CORS headers for Public API / widget endpoints
+- Static asset caching with immutable Cache-Control for `/_next/static/`
+- Widget.js served with CORS `*` and 1-hour cache
+- Upstream keepalive connections for performance
+
+### Security Hardening
+- **Helmet middleware** for HTTP security headers
+- Production-safe CORS with configurable allowed origins
+- Widget requests allowed from any origin (API key auth)
+- `trust proxy` enabled for correct IP behind nginx/load balancers
+- Raw body parsing enabled for Stripe webhook signature verification
+- Swagger docs auto-disabled in production (enable with `ENABLE_SWAGGER=true`)
+- Graceful shutdown hooks for clean container stops
+- Request validation with implicit type conversion
+
+### Email Service
+- **Global NestJS module** available to all other modules
+- SMTP transport via `nodemailer` (configurable host/port/auth)
+- Dev mode: logs emails to console when no `SMTP_HOST` configured
+- Template helpers:
+  - `sendWelcome(email, name)` — Account creation welcome
+  - `sendPasswordReset(email, token)` — Password reset with tokenized link
+  - `sendUsageWarning(email, resource, percent)` — Quota approaching limit
+  - `sendSubscriptionChanged(email, plan, action)` — Plan upgrade/downgrade/cancel
+- HTML email templates with inline styles and CTA buttons
+
+### File Upload Service
+- **S3-compatible storage** with local filesystem fallback
+- `POST /api/uploads` — Multipart file upload with folder organization
+- S3 support: AWS S3, MinIO, DigitalOcean Spaces, Cloudflare R2
+- Local mode: saves to `./uploads/` directory with public URL generation
+- File type validation: images (JPEG, PNG, GIF, WebP, SVG), JSON, ZIP, text, markdown
+- 10MB file size limit enforced at both multer and service layer
+- Random hex filenames prevent collisions and path traversal
+
+### Audit Logging
+- **MongoDB-backed** audit trail for all significant platform actions
+- `POST /api/audit` — Queryable with filters for action, resource, user, date range
+- `GET /api/audit/my-activity` — Personal activity summary (action counts over N days)
+- `GET /api/audit/security` — Security-relevant events (admin only)
+- Indexed for performance: userId+timestamp, action+timestamp, resource+resourceId
+- Tracked fields: userId, userEmail, action, resource, resourceId, details, ipAddress, userAgent, outcome
+- Action categories: auth (login/register/password), application CRUD, API key lifecycle, plugin installs, webhook events, subscription changes
+- Non-admin users restricted to their own logs; admins see all
+- **Frontend audit page** with:
+  - Filterable event log table with pagination
+  - Color-coded action badges
+  - Activity summary cards (action counts with last occurrence)
+  - Security events tab (admin only) with IP addresses and outcomes
+
+### Request Logger Middleware
+- HTTP request/response logging with method, path, status, duration, IP, user-agent
+- Log level based on status code: error for 5xx, warn for 4xx, log for 2xx/3xx
+
+### Deploy Scripts
+- **`deploy/scripts/setup.sh`** — First-time server provisioning:
+  - Auto-generates `.env` with cryptographically secure random secrets (JWT, database passwords)
+  - Self-signed SSL cert generation for development
+  - Docker image build and service start
+  - Health check verification
+- **`deploy/scripts/backup.sh`** — Automated database backups:
+  - PostgreSQL `pg_dump` compressed with gzip
+  - MongoDB `mongodump` to compressed archive
+  - Automatic cleanup of backups older than 7 days
+  - Restore instructions printed after each backup
+- **`deploy/scripts/ssl-setup.sh`** — Let's Encrypt integration:
+  - Certbot webroot verification
+  - Certificate copy to nginx SSL directory
+  - Auto-renewal cron job template
+  - Nginx reload after cert installation
+
+### Infrastructure Files
+- **`.dockerignore`** — Optimized Docker build context (excludes node_modules, .git, logs, backups, SSL certs)
+- **`next.config.js`** updated with `output: 'standalone'` for Docker, security headers, remote image patterns
+
+### Dashboard Navigation Updates
+- Audit Log added to admin sidebar section (alongside Admin Panel)
+- Admin section: Admin Panel + Audit Log (visible only to admin users)
