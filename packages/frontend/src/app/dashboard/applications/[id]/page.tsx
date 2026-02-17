@@ -8,8 +8,9 @@ import { useAuth } from '@/context/auth-context';
 import StreamingChat from '@/components/chat/streaming-chat';
 import PluginManager from '@/components/plugins/plugin-manager';
 import PromptTemplates from '@/components/prompts/prompt-templates';
+import EmbedCodeGenerator from '@/components/embed/embed-code-generator';
 
-type Tab = 'chat' | 'config' | 'plugins' | 'prompts' | 'conversations';
+type Tab = 'chat' | 'config' | 'plugins' | 'prompts' | 'conversations' | 'deploy' | 'analytics';
 
 export default function AppDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -29,6 +30,10 @@ export default function AppDetailPage() {
   const [conversations, setConversations] = useState<any[]>([]);
   const [convsLoading, setConvsLoading] = useState(false);
 
+  // Analytics
+  const [analytics, setAnalytics] = useState<any>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+
   useEffect(() => {
     if (app?.config) {
       setEditConfig(app.config);
@@ -47,6 +52,13 @@ export default function AppDetailPage() {
 
   useEffect(() => {
     if (tab === 'conversations') loadConversations();
+    if (tab === 'analytics') {
+      setAnalyticsLoading(true);
+      api.getAnalytics(id, 30)
+        .then((data: any) => setAnalytics(data))
+        .catch(() => setAnalytics(null))
+        .finally(() => setAnalyticsLoading(false));
+    }
   }, [tab]);
 
   const saveConfig = async () => {
@@ -82,6 +94,8 @@ export default function AppDetailPage() {
     { key: 'config', label: 'Configuration', icon: '⚙️' },
     { key: 'plugins', label: 'Plugins', icon: '🧩' },
     { key: 'prompts', label: 'Prompts', icon: '📝' },
+    { key: 'deploy', label: 'Deploy', icon: '🚀' },
+    { key: 'analytics', label: 'Analytics', icon: '📊' },
     { key: 'conversations', label: 'History', icon: '📋' },
   ];
 
@@ -186,6 +200,70 @@ export default function AppDetailPage() {
             setTab('config');
           }}
         />
+      )}
+
+      {/* Deploy Tab */}
+      {tab === 'deploy' && (
+        <EmbedCodeGenerator
+          applicationId={id}
+          appName={app.name}
+          appSlug={app.slug}
+        />
+      )}
+
+      {/* Analytics Tab */}
+      {tab === 'analytics' && (
+        <div>
+          {analyticsLoading ? (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[1,2,3,4].map(i => <div key={i} className="bg-white rounded-xl border p-5 animate-pulse h-24" />)}
+            </div>
+          ) : !analytics ? (
+            <div className="text-center py-12 text-slate-400">
+              <span className="text-4xl block mb-3">📊</span>
+              <p className="text-sm">No analytics data yet</p>
+              <p className="text-xs mt-1">Start using the chat or widget to generate analytics</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-white rounded-xl border p-5">
+                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Conversations</p>
+                  <p className="text-2xl font-bold text-slate-900">{analytics.conversations?.toLocaleString() || 0}</p>
+                </div>
+                <div className="bg-white rounded-xl border p-5">
+                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Messages</p>
+                  <p className="text-2xl font-bold text-slate-900">{analytics.messages?.toLocaleString() || 0}</p>
+                </div>
+                <div className="bg-white rounded-xl border p-5">
+                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Total Tokens</p>
+                  <p className="text-2xl font-bold text-slate-900">{analytics.totalTokens?.toLocaleString() || 0}</p>
+                </div>
+                <div className="bg-white rounded-xl border p-5">
+                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Est. Cost</p>
+                  <p className="text-2xl font-bold text-slate-900">${((analytics.totalTokens || 0) * 0.00003).toFixed(2)}</p>
+                </div>
+              </div>
+              {analytics.dailyActivity?.length > 0 && (
+                <div className="bg-white rounded-xl border p-6">
+                  <h3 className="font-semibold text-slate-900 mb-4">Daily Activity (Last 30 Days)</h3>
+                  <div className="flex items-end gap-1" style={{ height: '120px' }}>
+                    {analytics.dailyActivity.map((day: any) => {
+                      const maxCount = Math.max(...analytics.dailyActivity.map((d: any) => d.count));
+                      const height = maxCount > 0 ? (day.count / maxCount) * 100 : 0;
+                      return (
+                        <div key={day._id} className="flex-1 flex flex-col items-center justify-end" title={`${day._id}: ${day.count}`}>
+                          <div className="w-full bg-brand-500 rounded-t-sm min-h-[2px]" style={{ height: `${Math.max(height, 2)}%` }} />
+                          <span className="text-[8px] text-slate-400 mt-1 truncate w-full text-center">{day._id.slice(5)}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       )}
 
       {/* Conversations History Tab */}

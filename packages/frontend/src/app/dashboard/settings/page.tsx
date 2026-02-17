@@ -3,10 +3,11 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/auth-context';
 import api from '@/lib/api';
+import ApiKeyManager from '@/components/embed/api-key-manager';
 
 export default function SettingsPage() {
   const { user } = useAuth();
-  const [activeSection, setActiveSection] = useState<'profile' | 'security' | 'apikeys'>('profile');
+  const [activeSection, setActiveSection] = useState<'profile' | 'security' | 'apikeys' | 'providers'>('profile');
 
   // Profile
   const [displayName, setDisplayName] = useState('');
@@ -22,17 +23,16 @@ export default function SettingsPage() {
   const [passwordMessage, setPasswordMessage] = useState('');
   const [passwordError, setPasswordError] = useState('');
 
-  // API Keys (stored locally for dev — in prod these go to the backend)
+  // Provider Keys (stored locally for dev)
   const [openaiKey, setOpenaiKey] = useState('');
   const [anthropicKey, setAnthropicKey] = useState('');
-  const [keysMessage, setKeysMessage] = useState('');
+  const [providerKeysMessage, setProviderKeysMessage] = useState('');
 
   useEffect(() => {
     if (user) {
       setDisplayName(user.displayName || '');
       setAvatarUrl((user as any).avatarUrl || '');
     }
-    // Load saved keys from localStorage
     if (typeof window !== 'undefined') {
       setOpenaiKey(localStorage.getItem('agentbase_openai_key') || '');
       setAnthropicKey(localStorage.getItem('agentbase_anthropic_key') || '');
@@ -58,7 +58,6 @@ export default function SettingsPage() {
     setPasswordMessage('');
     if (newPassword.length < 8) { setPasswordError('New password must be at least 8 characters'); return; }
     if (newPassword !== confirmPassword) { setPasswordError('Passwords do not match'); return; }
-
     setPasswordSaving(true);
     try {
       await api.changePassword(currentPassword, newPassword);
@@ -72,19 +71,20 @@ export default function SettingsPage() {
     }
   };
 
-  const handleSaveKeys = () => {
+  const handleSaveProviderKeys = () => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('agentbase_openai_key', openaiKey);
       localStorage.setItem('agentbase_anthropic_key', anthropicKey);
     }
-    setKeysMessage('API keys saved locally!');
-    setTimeout(() => setKeysMessage(''), 3000);
+    setProviderKeysMessage('Provider keys saved locally!');
+    setTimeout(() => setProviderKeysMessage(''), 3000);
   };
 
   const sections = [
     { key: 'profile' as const, label: 'Profile', icon: '👤' },
     { key: 'security' as const, label: 'Security', icon: '🔒' },
     { key: 'apikeys' as const, label: 'API Keys', icon: '🔑' },
+    { key: 'providers' as const, label: 'AI Providers', icon: '🤖' },
   ];
 
   return (
@@ -108,8 +108,8 @@ export default function SettingsPage() {
         </div>
 
         {/* Content */}
-        <div className="flex-1 max-w-xl">
-          {/* Profile Section */}
+        <div className="flex-1 max-w-2xl">
+          {/* Profile */}
           {activeSection === 'profile' && (
             <div className="bg-white rounded-xl border p-6">
               <h2 className="font-semibold text-slate-900 mb-4">Profile Information</h2>
@@ -142,7 +142,7 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {/* Security Section */}
+          {/* Security */}
           {activeSection === 'security' && (
             <div className="bg-white rounded-xl border p-6">
               <h2 className="font-semibold text-slate-900 mb-4">Change Password</h2>
@@ -168,12 +168,15 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {/* API Keys Section */}
-          {activeSection === 'apikeys' && (
+          {/* API Keys (server-backed) */}
+          {activeSection === 'apikeys' && <ApiKeyManager />}
+
+          {/* AI Provider Keys (local) */}
+          {activeSection === 'providers' && (
             <div className="bg-white rounded-xl border p-6">
-              <h2 className="font-semibold text-slate-900 mb-1">AI Provider API Keys</h2>
-              <p className="text-sm text-slate-500 mb-4">Keys are stored locally in your browser for development. In production, use environment variables.</p>
-              {keysMessage && <div className="bg-green-50 text-green-600 px-4 py-3 rounded-lg text-sm mb-4">{keysMessage}</div>}
+              <h2 className="font-semibold text-slate-900 mb-1">AI Provider Keys</h2>
+              <p className="text-sm text-slate-500 mb-4">Keys are stored locally in your browser for development. In production, configure via environment variables.</p>
+              {providerKeysMessage && <div className="bg-green-50 text-green-600 px-4 py-3 rounded-lg text-sm mb-4">{providerKeysMessage}</div>}
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">OpenAI API Key</label>
@@ -183,8 +186,8 @@ export default function SettingsPage() {
                   <label className="block text-sm font-medium text-slate-700 mb-1">Anthropic API Key</label>
                   <input type="password" value={anthropicKey} onChange={(e) => setAnthropicKey(e.target.value)} placeholder="sk-ant-..." className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 outline-none text-sm font-mono" />
                 </div>
-                <button onClick={handleSaveKeys} className="bg-brand-600 text-white px-5 py-2 rounded-lg hover:bg-brand-700 font-medium text-sm">
-                  Save API Keys
+                <button onClick={handleSaveProviderKeys} className="bg-brand-600 text-white px-5 py-2 rounded-lg hover:bg-brand-700 font-medium text-sm">
+                  Save Provider Keys
                 </button>
               </div>
             </div>

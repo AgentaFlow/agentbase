@@ -219,3 +219,78 @@ Built by [AgentaFlow](https://agentaflow.com)
 - `streamMessage()` method with SSE parsing and abort control
 - Full prompt template CRUD methods
 - Conversation history methods
+
+---
+
+## Phase 3 Additions
+
+### Embeddable Chat Widget
+- **`/public/widget.js`** — Standalone JavaScript that can be embedded on any website via a `<script>` tag
+- Configurable via data attributes: `data-app-id`, `data-api-key`, `data-theme`, `data-position`, `data-title`, `data-greeting`, `data-placeholder`
+- Supports 4 positions (bottom-right, bottom-left, top-right, top-left)
+- Responsive design with mobile breakpoint
+- Session-based conversation persistence
+- Themed via CSS custom properties from the Theme Engine
+- "Powered by Agentbase" branding
+
+### Public API with API Key Authentication
+- **`POST /api/v1/chat`** — Send messages via API key (X-API-Key header)
+- **`GET /api/v1/app`** — Get application config for the scoped API key
+- **`GET /api/v1/app/:slug`** — Lookup application by slug
+- **`GET /api/v1/conversations/:id`** — Retrieve conversation history
+- API Key Guard (`ApiKeyGuard`) validates keys via SHA-256 hash matching
+- Rate Limiting Interceptor with per-key limits and `X-RateLimit-*` headers
+
+### API Key Management
+- **`POST /api/api-keys`** — Create new API key (raw key returned once only)
+- **`GET /api/api-keys`** — List keys for current user (prefix shown, never raw key)
+- **`POST /api/api-keys/:id/revoke`** — Disable key without deleting
+- **`DELETE /api/api-keys/:id`** — Permanently delete key
+- Keys scoped to specific applications or all apps
+- Configurable rate limits (10-10,000 req/min)
+- Usage tracking: last used timestamp, total request count
+- Frontend component with create form, rate limit slider, app scoping, and copy-to-clipboard
+
+### Analytics Module
+- **`GET /api/analytics/:appId`** — Aggregated stats (conversations, messages, tokens, costs)
+- **`GET /api/analytics/:appId/events`** — Raw event stream
+- MongoDB-backed event tracking (message_sent, message_received, conversation_started, widget_loaded, api_call, error)
+- Daily activity bar chart
+- Provider breakdown (OpenAI vs Anthropic usage)
+- Source breakdown (dashboard vs widget vs API)
+- Estimated cost calculation based on token usage
+- Per-app analytics tab in application detail page
+- Global analytics dashboard page with app selector and time range filter
+
+### Theme Engine
+- CSS custom property generation from theme definitions
+- 4 built-in presets: Default (indigo), Dark (slate), Minimal (neutral), Vibrant (pink)
+- Theme merging: partial overrides on any base theme
+- Theme validation for required fields
+- Properties cover: colors (14), typography (4), layout (5), plus custom vars
+- Widget styles driven by `--ab-*` CSS variables
+
+### Embed Code Generator
+- Visual configuration UI for the chat widget
+- Theme picker with color swatches
+- Position selector, title, greeting, placeholder customization
+- Live preview panel showing the widget with current settings
+- Auto-generated `<script>` tag with all configured attributes
+- Copy-to-clipboard for the embed code
+- REST API curl example with current API key
+- Located in the "Deploy" tab of each application
+
+### Admin Panel
+- **`GET /api/admin/stats`** — Platform-wide statistics (users, apps, plugins)
+- **`GET /api/admin/users`** — List all users
+- **`PUT /api/admin/users/:id/role`** — Change user role
+- **`PUT /api/admin/users/:id/status`** — Enable/disable accounts
+- Role-gated: only visible to admin users in the sidebar
+- Overview tab with platform stats cards
+- Users tab with role dropdown, status toggle, and join date
+
+### Dashboard Navigation Updates
+- Added Analytics page to sidebar
+- Admin Panel conditionally shown for admin role users
+- Application detail page now has 7 tabs: Chat, Configuration, Plugins, Prompts, Deploy, Analytics, History
+- Settings page split into 4 sections: Profile, Security, API Keys (server-backed), AI Providers (local keys)

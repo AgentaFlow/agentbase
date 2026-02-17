@@ -10,6 +10,10 @@ import { ThemesModule } from './modules/themes/themes.module';
 import { HealthModule } from './modules/health/health.module';
 import { HooksModule } from './modules/hooks/hooks.module';
 import { PromptsModule } from './modules/prompts/prompts.module';
+import { ApiKeysModule } from './modules/api-keys/api-keys.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { AdminModule } from './modules/admin/admin.module';
+import { PublicApiModule } from './modules/applications/public-api.module';
 
 @Module({
   imports: [
@@ -57,6 +61,10 @@ import { PromptsModule } from './modules/prompts/prompts.module';
     PluginsModule,
     ThemesModule,
     PromptsModule,
+    ApiKeysModule,
+    AnalyticsModule,
+    AdminModule,
+    PublicApiModule,
   ],
 })
 export class AppModule {}

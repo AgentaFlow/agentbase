@@ -1,0 +1,148 @@
+import { ThemeDefinition } from '../engine/theme-engine';
+
+export const defaultTheme: ThemeDefinition = {
+  name: 'Default',
+  slug: 'default',
+  version: '1.0.0',
+  colors: {
+    primary: '#4F46E5',
+    primaryHover: '#4338CA',
+    background: '#FFFFFF',
+    surface: '#F8FAFC',
+    text: '#1E293B',
+    textMuted: '#64748B',
+    border: '#E2E8F0',
+    userBubble: '#4F46E5',
+    userBubbleText: '#FFFFFF',
+    assistantBubble: '#F1F5F9',
+    assistantBubbleText: '#1E293B',
+    inputBg: '#FFFFFF',
+    inputBorder: '#E2E8F0',
+    inputFocus: '#4F46E5',
+  },
+  typography: {
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    fontSize: '14px',
+    lineHeight: '1.5',
+    headerSize: '16px',
+  },
+  layout: {
+    borderRadius: '12px',
+    bubbleRadius: '16px',
+    widgetWidth: '380px',
+    widgetHeight: '560px',
+    padding: '16px',
+  },
+};
+
+export const darkTheme: ThemeDefinition = {
+  name: 'Dark',
+  slug: 'dark',
+  version: '1.0.0',
+  colors: {
+    primary: '#818CF8',
+    primaryHover: '#6366F1',
+    background: '#0F172A',
+    surface: '#1E293B',
+    text: '#F1F5F9',
+    textMuted: '#94A3B8',
+    border: '#334155',
+    userBubble: '#818CF8',
+    userBubbleText: '#FFFFFF',
+    assistantBubble: '#1E293B',
+    assistantBubbleText: '#F1F5F9',
+    inputBg: '#1E293B',
+    inputBorder: '#334155',
+    inputFocus: '#818CF8',
+  },
+  typography: {
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    fontSize: '14px',
+    lineHeight: '1.5',
+    headerSize: '16px',
+  },
+  layout: {
+    borderRadius: '12px',
+    bubbleRadius: '16px',
+    widgetWidth: '380px',
+    widgetHeight: '560px',
+    padding: '16px',
+  },
+};
+
+export const minimalTheme: ThemeDefinition = {
+  name: 'Minimal',
+  slug: 'minimal',
+  version: '1.0.0',
+  colors: {
+    primary: '#171717',
+    primaryHover: '#404040',
+    background: '#FFFFFF',
+    surface: '#FAFAFA',
+    text: '#171717',
+    textMuted: '#737373',
+    border: '#E5E5E5',
+    userBubble: '#171717',
+    userBubbleText: '#FFFFFF',
+    assistantBubble: '#F5F5F5',
+    assistantBubbleText: '#171717',
+    inputBg: '#FFFFFF',
+    inputBorder: '#D4D4D4',
+    inputFocus: '#171717',
+  },
+  typography: {
+    fontFamily: '"Inter", -apple-system, sans-serif',
+    fontSize: '13px',
+    lineHeight: '1.6',
+    headerSize: '15px',
+  },
+  layout: {
+    borderRadius: '8px',
+    bubbleRadius: '8px',
+    widgetWidth: '360px',
+    widgetHeight: '520px',
+    padding: '14px',
+  },
+};
+
+export const vibrantTheme: ThemeDefinition = {
+  name: 'Vibrant',
+  slug: 'vibrant',
+  version: '1.0.0',
+  colors: {
+    primary: '#EC4899',
+    primaryHover: '#DB2777',
+    background: '#FDF2F8',
+    surface: '#FFFFFF',
+    text: '#1F2937',
+    textMuted: '#6B7280',
+    border: '#FBCFE8',
+    userBubble: '#EC4899',
+    userBubbleText: '#FFFFFF',
+    assistantBubble: '#FFFFFF',
+    assistantBubbleText: '#1F2937',
+    inputBg: '#FFFFFF',
+    inputBorder: '#FBCFE8',
+    inputFocus: '#EC4899',
+  },
+  typography: {
+    fontFamily: '"Plus Jakarta Sans", -apple-system, sans-serif',
+    fontSize: '14px',
+    lineHeight: '1.5',
+    headerSize: '17px',
+  },
+  layout: {
+    borderRadius: '16px',
+    bubbleRadius: '20px',
+    widgetWidth: '380px',
+    widgetHeight: '560px',
+    padding: '16px',
+  },
+};
+
+export const themePresets: Record<string, ThemeDefinition> = {
+  default: defaultTheme,
+  dark: darkTheme,
+  minimal: minimalTheme,
+  vibrant: vibrantTheme,
+};

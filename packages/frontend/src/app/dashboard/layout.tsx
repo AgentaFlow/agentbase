@@ -6,11 +6,16 @@ import { useAuth } from '@/context/auth-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 
 const navItems = [
-  { href: '/dashboard', label: 'Overview', icon: '📊' },
+  { href: '/dashboard', label: 'Overview', icon: '🏠' },
   { href: '/dashboard/applications', label: 'Applications', icon: '🚀' },
+  { href: '/dashboard/analytics', label: 'Analytics', icon: '📊' },
   { href: '/dashboard/plugins', label: 'Plugins', icon: '🧩' },
   { href: '/dashboard/themes', label: 'Themes', icon: '🎨' },
   { href: '/dashboard/settings', label: 'Settings', icon: '⚙️' },
+];
+
+const adminNavItems = [
+  { href: '/dashboard/admin', label: 'Admin Panel', icon: '🛡️' },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -39,6 +44,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </Link>
               );
             })}
+            {user?.role === 'admin' && (
+              <>
+                <div className="pt-3 pb-1 px-3"><span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Admin</span></div>
+                {adminNavItems.map((item) => {
+                  const isActive = pathname.startsWith(item.href);
+                  return (
+                    <Link key={item.href} href={item.href} className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive ? 'bg-brand-50 text-brand-700' : 'text-slate-600 hover:bg-slate-100'}`}>
+                      <span>{item.icon}</span>
+                      {item.label}
+                    </Link>
+                  );
+                })}
+              </>
+            )}
           </nav>
           <div className="p-4 border-t">
             {user && (

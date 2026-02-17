@@ -29,6 +29,14 @@ export class ApplicationsService {
     });
   }
 
+  async findAll(): Promise<Application[]> {
+    return this.appRepo.find({ order: { createdAt: 'DESC' } });
+  }
+
+  async findBySlug(slug: string): Promise<Application | null> {
+    return this.appRepo.findOne({ where: { slug } });
+  }
+
   async findById(id: string, ownerId?: string): Promise<Application> {
     const app = await this.appRepo.findOne({ where: { id } });
     if (!app) throw new NotFoundException('Application not found');
