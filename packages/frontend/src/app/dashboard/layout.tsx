@@ -8,8 +8,11 @@ import { ProtectedRoute } from '@/components/auth/protected-route';
 const navItems = [
   { href: '/dashboard', label: 'Overview', icon: '🏠' },
   { href: '/dashboard/applications', label: 'Applications', icon: '🚀' },
+  { href: '/dashboard/marketplace', label: 'Marketplace', icon: '🛒' },
   { href: '/dashboard/analytics', label: 'Analytics', icon: '📊' },
-  { href: '/dashboard/plugins', label: 'Plugins', icon: '🧩' },
+  { href: '/dashboard/billing', label: 'Billing', icon: '💳' },
+  { href: '/dashboard/webhooks', label: 'Webhooks', icon: '🔗' },
+  { href: '/dashboard/plugins', label: 'My Plugins', icon: '🧩' },
   { href: '/dashboard/themes', label: 'Themes', icon: '🎨' },
   { href: '/dashboard/settings', label: 'Settings', icon: '⚙️' },
 ];

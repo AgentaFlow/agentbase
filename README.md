@@ -294,3 +294,92 @@ Built by [AgentaFlow](https://agentaflow.com)
 - Admin Panel conditionally shown for admin role users
 - Application detail page now has 7 tabs: Chat, Configuration, Plugins, Prompts, Deploy, Analytics, History
 - Settings page split into 4 sections: Profile, Security, API Keys (server-backed), AI Providers (local keys)
+
+---
+
+## Phase 4 Additions
+
+### Stripe Billing Integration
+- **`GET /api/billing/plans`** — List all plan tiers with pricing, limits, and features
+- **`GET /api/billing/usage`** — Current usage metrics (tokens, messages, apps, API keys)
+- **`POST /api/billing/checkout`** — Create Stripe Checkout session for plan upgrade
+- **`POST /api/billing/portal`** — Create Stripe Customer Portal session for billing management
+- **`POST /api/billing/webhook`** — Stripe webhook endpoint for payment events
+- 4 tiers: Free ($0), Starter ($29/mo), Pro ($99/mo), Enterprise ($499/mo)
+- Each tier defines limits for tokens, messages, applications, and API keys
+- Dev mode: simulates checkout without Stripe keys configured
+- Production: full Stripe Checkout + Customer Portal integration
+- Handles subscription lifecycle: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_failed`
+
+### Usage Metering & Quotas
+- Token and message counters tracked per billing cycle on the Subscription entity
+- `trackUsage(userId, tokens)` returns `{ allowed, remaining }` — enforce limits before AI calls
+- `getUsage(userId)` returns current usage with percentage bars
+- `resetUsage(userId)` resets counters at billing cycle renewal
+- Usage meters displayed in the Billing dashboard with color-coded progress bars (green/amber/red)
+
+### Subscription Entity
+- PostgreSQL table with Stripe customer ID, subscription ID, price ID
+- Plan tier enum: `free | starter | pro | enterprise`
+- Status enum: `active | past_due | canceled | trialing | incomplete`
+- Per-plan limits: `tokenLimit`, `appLimit`, `messagesLimit`, `apiKeyLimit`
+- Usage counters: `tokensUsed`, `messagesUsed`
+- Billing period tracking: `currentPeriodStart`, `currentPeriodEnd`
+
+### Webhook System
+- **`GET /api/webhooks/events`** — List all available event types
+- **`POST /api/webhooks`** — Create webhook with HMAC-SHA256 signing secret (shown once)
+- **`GET /api/webhooks`** — List webhooks with delivery stats
+- **`PUT /api/webhooks/:id`** — Update webhook URL, events, etc.
+- **`DELETE /api/webhooks/:id`** — Delete webhook
+- **`POST /api/webhooks/:id/toggle`** — Enable/disable webhook
+- **`POST /api/webhooks/:id/test`** — Send a test ping event
+- 11 event types: message.sent, message.received, conversation.started, conversation.ended, application.created/updated, plugin.installed/uninstalled, api_key.created, usage.limit_reached, subscription.changed
+- Payload verification via `X-Agentbase-Signature` header (HMAC-SHA256)
+- Delivery tracking: total deliveries, failed deliveries, last error
+- 10-second timeout per delivery with error capture
+
+### Plugin Marketplace (Enhanced)
+- **`GET /api/marketplace/browse`** — Search/browse with pagination, sorting (popular/recent/rating)
+- **`GET /api/marketplace/featured`** — Curated featured plugins
+- **`GET /api/marketplace/categories`** — 8 plugin categories with icons
+- **`GET /api/marketplace/plugins/:id`** — Full plugin detail with rating stats and reviews
+- **`POST /api/marketplace/plugins/:id/reviews`** — Submit or update a review (1-5 stars + text)
+- **`DELETE /api/marketplace/plugins/:id/reviews`** — Delete your review
+- Rating aggregation: average rating, total reviews, star distribution (5-1)
+- One review per user per plugin (upsert behavior)
+- MongoDB-backed reviews with user name, rating, text, plugin version
+- Category browsing: Chat, Analytics, Integrations, Security, AI Tools, Productivity, E-Commerce, Content
+
+### Frontend: Billing Dashboard
+- Plan comparison grid with feature lists and pricing
+- Current plan highlighting with upgrade buttons
+- Usage meters with color-coded progress bars (tokens, messages, apps, API keys)
+- Stripe Checkout redirect for plan upgrades
+- Manage Billing button for Stripe Customer Portal
+- Success state after upgrade with plan name display
+- Billing period display
+
+### Frontend: Webhook Management
+- Create form with name, URL, and event multi-selector (toggle buttons)
+- Signing secret displayed once on creation (green banner)
+- Webhook list with active/paused status indicators
+- Test ping button with success/failure feedback
+- Toggle enable/disable, delete actions
+- Delivery statistics: total/failed counts, last triggered, last error
+- Event tag display per webhook
+
+### Frontend: Enhanced Marketplace
+- Category ribbon with icon buttons for quick filtering
+- Search with instant filter + sort dropdown (popular/recent/rating)
+- Featured plugins section (top 3 cards) on the homepage
+- Plugin grid with star ratings, review counts, author, version
+- Plugin detail view with full info, rating distribution bar chart
+- Review submission form with interactive star picker
+- Review list with user name, rating, date, and text
+- Back navigation from detail to browse
+
+### Dashboard Navigation Updates
+- Added Marketplace, Billing, and Webhooks to sidebar
+- Reordered: Overview → Applications → Marketplace → Analytics → Billing → Webhooks → My Plugins → Themes → Settings
+- Admin Panel still conditionally shown for admin users
