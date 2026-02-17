@@ -180,8 +180,15 @@ class ProviderRegistry:
         ]
 
     @classmethod
-    def initialize(cls, openai_key: str = None, anthropic_key: str = None):
+    def initialize(
+        cls,
+        openai_key: str = None,
+        anthropic_key: str = None,
+        gemini_key: str = None,
+    ):
         if openai_key:
             cls.register(OpenAIProvider(openai_key))
         if anthropic_key:
             cls.register(AnthropicProvider(anthropic_key))
+        if gemini_key:
+            cls.register(GeminiProvider(gemini_key))
