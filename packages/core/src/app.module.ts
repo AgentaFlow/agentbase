@@ -52,7 +52,9 @@ import { SystemHealthModule } from './modules/system-health/system-health.module
         password: config.get('POSTGRES_PASSWORD', 'agentbase_dev'),
         database: config.get('POSTGRES_DB', 'agentbase'),
         autoLoadEntities: true,
-        synchronize: config.get('NODE_ENV') === 'development',
+        synchronize: false, // Use migrations instead
+        migrations: ['dist/database/migrations/*.js'],
+        migrationsRun: config.get('RUN_MIGRATIONS') === 'true',
         logging: config.get('NODE_ENV') === 'development',
       }),
     }),
