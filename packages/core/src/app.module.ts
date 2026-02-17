@@ -8,6 +8,8 @@ import { ApplicationsModule } from './modules/applications/applications.module';
 import { PluginsModule } from './modules/plugins/plugins.module';
 import { ThemesModule } from './modules/themes/themes.module';
 import { HealthModule } from './modules/health/health.module';
+import { HooksModule } from './modules/hooks/hooks.module';
+import { PromptsModule } from './modules/prompts/prompts.module';
 
 @Module({
   imports: [
@@ -48,11 +50,13 @@ import { HealthModule } from './modules/health/health.module';
 
     // Feature modules
     HealthModule,
+    HooksModule,
     AuthModule,
     UsersModule,
     ApplicationsModule,
     PluginsModule,
     ThemesModule,
+    PromptsModule,
   ],
 })
 export class AppModule {}

@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 
 from app.core.config import settings
 from app.core.database import connect_db, close_db
-from app.routers import health, conversations, models
+from app.routers import health, conversations, models, streaming
 
 
 @asynccontextmanager
@@ -36,4 +36,5 @@ app.add_middleware(
 # Routers
 app.include_router(health.router, prefix="/api", tags=["health"])
 app.include_router(conversations.router, prefix="/api/ai", tags=["conversations"])
+app.include_router(streaming.router, prefix="/api/ai", tags=["streaming"])
 app.include_router(models.router, prefix="/api/ai", tags=["models"])

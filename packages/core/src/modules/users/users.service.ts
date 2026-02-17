@@ -14,6 +14,9 @@ export class UsersService {
     email: string;
     passwordHash: string;
     displayName?: string;
+    githubId?: string;
+    googleId?: string;
+    avatarUrl?: string;
   }): Promise<User> {
     const user = this.userRepo.create(data);
     return this.userRepo.save(user);
@@ -25,6 +28,14 @@ export class UsersService {
 
   async findByEmail(email: string): Promise<User | null> {
     return this.userRepo.findOne({ where: { email } });
+  }
+
+  async findByGithubId(githubId: string): Promise<User | null> {
+    return this.userRepo.findOne({ where: { githubId } });
+  }
+
+  async findByGoogleId(googleId: string): Promise<User | null> {
+    return this.userRepo.findOne({ where: { googleId } });
   }
 
   async update(id: string, data: Partial<User>): Promise<User> {
@@ -42,5 +53,22 @@ export class UsersService {
     return this.userRepo.find({
       select: ['id', 'email', 'displayName', 'role', 'isActive', 'createdAt'],
     });
+  }
+
+  async getStats(userId: string): Promise<{
+    applicationCount: number;
+    joinedAt: string;
+  }> {
+    const user = await this.findById(userId);
+    if (!user) throw new NotFoundException('User not found');
+
+    const appCount = await this.userRepo.manager
+      .getRepository('Application')
+      .count({ where: { ownerId: userId } });
+
+    return {
+      applicationCount: appCount,
+      joinedAt: user.createdAt.toISOString(),
+    };
   }
 }
