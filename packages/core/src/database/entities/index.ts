@@ -6,3 +6,7 @@ export { InstalledPlugin, InstalledPluginStatus } from './installed-plugin.entit
 export { ApiKey } from './api-key.entity';
 export { Subscription, PlanTier, SubscriptionStatus } from './subscription.entity';
 export { Webhook } from './webhook.entity';
+export { Team, TeamMember, TeamRole } from './team.entity';
+export { CustomDomain, DomainStatus } from './custom-domain.entity';
+export { Branding } from './branding.entity';
+export { SsoConfig, SsoProvider } from './sso-config.entity';

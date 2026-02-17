@@ -159,112 +159,6 @@ class AnthropicProvider(AIProvider):
                 yield text
 
 
-class GeminiProvider(AIProvider):
-    """Google Gemini provider."""
-
-    def __init__(self, api_key: str):
-        import google.generativeai as genai
-        genai.configure(api_key=api_key)
-        self.genai = genai
-
-    @property
-    def name(self) -> str:
-        return "gemini"
-
-    @property
-    def available_models(self) -> list[str]:
-        return [
-            "gemini-2.0-flash-exp",
-            "gemini-exp-1206",
-            "gemini-2.0-flash-thinking-exp-01-21",
-            "gemini-1.5-pro",
-            "gemini-1.5-flash",
-        ]
-
-    async def chat(self, request: ChatRequest) -> ChatResponse:
-        model_name = request.model or "gemini-2.0-flash-exp"
-        model = self.genai.GenerativeModel(model_name)
-
-        # Convert messages to Gemini format
-        history = []
-        system_instruction = None
-        user_message = None
-
-        for m in request.messages:
-            if m.role == "system":
-                system_instruction = m.content
-            elif m.role == "user":
-                user_message = m.content
-                if len(history) > 0:  # If there's history, add to it
-                    history.append({"role": "user", "parts": [m.content]})
-            elif m.role == "assistant":
-                history.append({"role": "model", "parts": [m.content]})
-
-        # Start chat with history
-        chat = model.start_chat(history=history[:-1] if len(history) > 1 else [])
-        
-        # Generate response
-        response = await chat.send_message_async(
-            user_message or history[-1]["parts"][0] if history else "Hello",
-            generation_config=self.genai.types.GenerationConfig(
-                temperature=request.temperature,
-                max_output_tokens=request.max_tokens,
-            ),
-        )
-
-        # Extract usage info if available
-        usage = {}
-        if hasattr(response, "usage_metadata") and response.usage_metadata:
-            usage = {
-                "prompt_tokens": response.usage_metadata.prompt_token_count or 0,
-                "completion_tokens": response.usage_metadata.candidates_token_count or 0,
-                "total_tokens": response.usage_metadata.total_token_count or 0,
-            }
-
-        return ChatResponse(
-            content=response.text,
-            model=model_name,
-            provider=self.name,
-            usage=usage,
-        )
-
-    async def chat_stream(self, request: ChatRequest) -> AsyncGenerator[str, None]:
-        model_name = request.model or "gemini-2.0-flash-exp"
-        model = self.genai.GenerativeModel(model_name)
-
-        # Convert messages to Gemini format
-        history = []
-        system_instruction = None
-        user_message = None
-
-        for m in request.messages:
-            if m.role == "system":
-                system_instruction = m.content
-            elif m.role == "user":
-                user_message = m.content
-                if len(history) > 0:
-                    history.append({"role": "user", "parts": [m.content]})
-            elif m.role == "assistant":
-                history.append({"role": "model", "parts": [m.content]})
-
-        # Start chat with history
-        chat = model.start_chat(history=history[:-1] if len(history) > 1 else [])
-        
-        # Stream response
-        response = await chat.send_message_async(
-            user_message or history[-1]["parts"][0] if history else "Hello",
-            generation_config=self.genai.types.GenerationConfig(
-                temperature=request.temperature,
-                max_output_tokens=request.max_tokens,
-            ),
-            stream=True,
-        )
-
-        async for chunk in response:
-            if chunk.text:
-                yield chunk.text
-
-
 class ProviderRegistry:
     """Registry of available AI providers."""
 
@@ -286,15 +180,8 @@ class ProviderRegistry:
         ]
 
     @classmethod
-    def initialize(
-        cls,
-        openai_key: str = None,
-        anthropic_key: str = None,
-        gemini_key: str = None,
-    ):
+    def initialize(cls, openai_key: str = None, anthropic_key: str = None):
         if openai_key:
             cls.register(OpenAIProvider(openai_key))
         if anthropic_key:
             cls.register(AnthropicProvider(anthropic_key))
-        if gemini_key:
-            cls.register(GeminiProvider(gemini_key))

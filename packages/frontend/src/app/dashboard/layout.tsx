@@ -4,22 +4,29 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
+import NotificationBell from '@/components/notifications/notification-bell';
 
 const navItems = [
   { href: '/dashboard', label: 'Overview', icon: '🏠' },
   { href: '/dashboard/applications', label: 'Applications', icon: '🚀' },
+  { href: '/dashboard/knowledge', label: 'Knowledge', icon: '📚' },
   { href: '/dashboard/marketplace', label: 'Marketplace', icon: '🛒' },
   { href: '/dashboard/analytics', label: 'Analytics', icon: '📊' },
+  { href: '/dashboard/team', label: 'Team', icon: '👥' },
   { href: '/dashboard/billing', label: 'Billing', icon: '💳' },
   { href: '/dashboard/webhooks', label: 'Webhooks', icon: '🔗' },
   { href: '/dashboard/plugins', label: 'My Plugins', icon: '🧩' },
   { href: '/dashboard/themes', label: 'Themes', icon: '🎨' },
+  { href: '/dashboard/branding', label: 'Branding', icon: '🖌️' },
+  { href: '/dashboard/custom-domains', label: 'Domains', icon: '🌐' },
+  { href: '/dashboard/exports', label: 'Export/Import', icon: '📦' },
   { href: '/dashboard/settings', label: 'Settings', icon: '⚙️' },
 ];
 
 const adminNavItems = [
   { href: '/dashboard/admin', label: 'Admin Panel', icon: '🛡️' },
   { href: '/dashboard/audit', label: 'Audit Log', icon: '📋' },
+  { href: '/dashboard/system-health', label: 'System Health', icon: '💚' },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -38,7 +45,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <span className="text-lg font-bold text-slate-900">Agentbase</span>
             </Link>
           </div>
-          <nav className="flex-1 p-4 space-y-1">
+          <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
             {navItems.map((item) => {
               const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
               return (
@@ -76,6 +83,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </aside>
         <main className="flex-1 overflow-auto">
+          {/* Top bar with notification bell */}
+          <div className="h-14 border-b bg-white flex items-center justify-end px-6 gap-3 sticky top-0 z-30">
+            <NotificationBell />
+            {user && (
+              <div className="w-8 h-8 bg-brand-100 rounded-full flex items-center justify-center text-xs font-medium text-brand-700">
+                {(user.displayName || user.email || '?')[0].toUpperCase()}
+              </div>
+            )}
+          </div>
           <div className="p-8">{children}</div>
         </main>
       </div>

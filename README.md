@@ -131,7 +131,6 @@ Agentbase supports multiple AI providers out of the box:
 
 - **OpenAI** — GPT-4, GPT-4o, GPT-3.5 Turbo
 - **Anthropic** — Claude Sonnet 4.5, Claude Haiku 4.5
-- **Google** — Gemini 2.0 Flash, Gemini 1.5 Pro, Gemini 1.5 Flash
 - **HuggingFace** — Coming soon
 
 Set your API keys in `.env` and Agentbase handles the rest.
@@ -154,7 +153,7 @@ Set your API keys in `.env` and Agentbase handles the rest.
 - CRUD for Applications, Plugins, Themes, Users
 - WordPress-style hook engine (actions + filters)
 - Plugin SDK with lifecycle hooks
-- Multi-provider AI abstraction (OpenAI, Anthropic, Google Gemini)
+- Multi-provider AI abstraction (OpenAI, Anthropic)
 - Docker Compose for local databases (PostgreSQL, MongoDB, Redis)
 
 ## Contributing
@@ -257,7 +256,7 @@ Built by [AgentaFlow](https://www.agentaflow.com)
 - **`GET /api/analytics/:appId/events`** — Raw event stream
 - MongoDB-backed event tracking (message_sent, message_received, conversation_started, widget_loaded, api_call, error)
 - Daily activity bar chart
-- Provider breakdown (OpenAI vs Anthropic vs Gemini usage)
+- Provider breakdown (OpenAI vs Anthropic usage)
 - Source breakdown (dashboard vs widget vs API)
 - Estimated cost calculation based on token usage
 - Per-app analytics tab in application detail page
@@ -485,3 +484,180 @@ Built by [AgentaFlow](https://www.agentaflow.com)
 ### Dashboard Navigation Updates
 - Audit Log added to admin sidebar section (alongside Admin Panel)
 - Admin section: Admin Panel + Audit Log (visible only to admin users)
+
+---
+
+## Phase 6 Additions
+
+### Teams & Organizations
+- **`POST /api/teams`** — Create a new team with name, slug, description
+- **`GET /api/teams`** — List teams for current user
+- **`GET /api/teams/:id`** — Get team details with members (includes `currentUserRole`)
+- **`PUT /api/teams/:id`** — Update team (admin/owner only)
+- **`DELETE /api/teams/:id`** — Delete team (owner only, cascading)
+- **`GET /api/teams/:id/members`** — List team members with user details
+- **`POST /api/teams/:id/members`** — Invite member by email with role
+- **`DELETE /api/teams/:id/members/:memberId`** — Remove a member
+- **`PUT /api/teams/:id/members/:memberId/role`** — Change member role (owner only)
+- Role hierarchy: Owner > Admin > Member > Viewer
+- Role-based permission guards: only owners can delete teams or change roles, admins can invite/remove
+- Auto-generates slug from team name, validates uniqueness
+- Team settings: `defaultProvider`, `sharedApiKeys`, `allowMemberInvites`
+- Team entity with PostgreSQL + TeamMember join table
+
+### Knowledge Base (RAG)
+- **`POST /api/knowledge`** — Create a knowledge base linked to an application
+- **`GET /api/knowledge`** — List knowledge bases for current user
+- **`GET /api/knowledge/app/:appId`** — List knowledge bases for an application
+- **`GET /api/knowledge/:id`** — Get knowledge base details
+- **`PUT /api/knowledge/:id`** — Update knowledge base settings
+- **`DELETE /api/knowledge/:id`** — Delete knowledge base with all documents and chunks
+- **`GET /api/knowledge/:id/documents`** — List documents in a knowledge base
+- **`POST /api/knowledge/:id/documents`** — Upload a file (multipart) for processing
+- **`POST /api/knowledge/:id/documents/text`** — Add text content as a document
+- **`DELETE /api/knowledge/documents/:docId`** — Delete a document and its chunks
+- **`POST /api/knowledge/:id/search`** — RAG semantic search with relevance scoring
+- **`POST /api/knowledge/:id/context`** — Build formatted context string for AI prompts
+- Document processing pipeline:
+  - Text chunking with configurable chunk size (default 1000 chars) and overlap (200 chars)
+  - Sentence-boundary-aware splitting for clean chunks
+  - OpenAI `text-embedding-3-small` embedding generation per chunk
+  - Cosine similarity vector search for retrieval
+  - Fallback to regex text search when embeddings unavailable
+- Configurable settings per knowledge base: chunk size, overlap, embedding model, top-K, similarity threshold
+- Three MongoDB collections: `knowledge_bases`, `knowledge_documents`, `knowledge_chunks`
+- Document status tracking: `processing` → `ready` | `error` with error messages
+- Context builder produces formatted source-attributed text blocks for injection into system prompts
+
+### In-App Notifications
+- **`GET /api/notifications`** — List notifications with optional filters (unread, category)
+- **`GET /api/notifications/count`** — Get unread notification count
+- **`POST /api/notifications/:id/read`** — Mark a notification as read
+- **`POST /api/notifications/read-all`** — Mark all notifications as read
+- **`DELETE /api/notifications/:id`** — Delete a notification
+- Global module with convenience helpers for other services:
+  - `notifyUsageWarning(userId, resource, percent)` — Quota alerts
+  - `notifySubscriptionChanged(userId, plan, action)` — Billing events
+  - `notifyTeamInvite(userId, teamName, teamId)` — Team invitations
+  - `notifyDocumentProcessed(userId, fileName, status)` — Knowledge base updates
+  - `notifyWebhookFailure(userId, webhookName, error)` — Delivery failures
+- Notification types: `info`, `success`, `warning`, `error` with distinct icons
+- Optional action URL and label for click-through navigation
+- Category-based filtering: billing, team, knowledge, webhook
+- MongoDB-backed with compound indexes for efficient queries
+
+### Frontend: Team Management Page
+- Team list sidebar with create form (auto-slug generation from name)
+- Team detail view with current user's role badge
+- Member invite form with email input and role selector (Admin/Member/Viewer)
+- Member list with avatar initials, email, and role badges (color-coded)
+- Inline role change dropdown (owner only) and remove button
+- Delete team confirmation (owner only)
+
+### Frontend: Knowledge Base Page
+- Knowledge base list sidebar with create form (linked to applications)
+- Three-tab detail view: Documents, Search, Settings
+- **Documents tab**: File upload button, text paste form with title/URL/content, document list with status badges and chunk counts, delete per document
+- **Search tab**: Query input with relevance-scored results showing source file, similarity percentage, and content preview
+- **Settings tab**: Read-only display of chunking and retrieval configuration
+- Supported file types for upload: `.txt`, `.md`, `.json`, `.csv`, `.html`, `.xml`
+
+### Frontend: Notification Bell Component
+- Persistent bell icon in dashboard top bar with unread count badge (red circle)
+- Click-to-expand dropdown (396px wide, max 480px tall, scrollable)
+- 30-second polling interval for unread count updates
+- Notification cards with type icons, time-ago timestamps, read/unread state
+- "Mark all read" bulk action and per-notification "Mark read" / "Dismiss"
+- Action links for click-through navigation (e.g., "View Plans", "View Team")
+- Outside-click dismissal and proper z-indexing
+- Unread notifications highlighted with subtle blue background and dot indicator
+
+### Dashboard Navigation Updates
+- Added Knowledge (📚) and Team (👥) to sidebar
+- Notification bell + user avatar in sticky top bar
+- Nav order: Overview → Applications → Knowledge → Marketplace → Analytics → Team → Billing → Webhooks → My Plugins → Themes → Settings
+- Sidebar is now scrollable for screens with many nav items
+
+---
+
+## Phase 6 Additions
+
+### Custom Domains
+- **Entity**: `custom_domains` table with domain, status (pending/verifying/active/failed/expired), verification tokens, SSL tracking
+- **DNS Verification**: Supports both CNAME and TXT record verification
+  - CNAME: Point domain to `custom.agentbase.dev`
+  - TXT: Add verification token at `_agentbase-verify.yourdomain.com`
+  - Auto-detection of verification method with up to 10 check attempts
+- **API Endpoints**: `POST /api/custom-domains`, `POST .../verify`, `GET .../dns`, `PUT`, `DELETE`
+- **SSL Tracking**: Fields for SSL provider, expiration, and auto-renewal status
+- **Domain Settings**: Configurable redirect-www, force-HTTPS, custom headers
+- **Reserved Domains**: Prevents registration of platform-owned domains
+- **Frontend**: Full management page with domain list, DNS setup instructions, verification workflow, status badges
+
+### White-Label Branding
+- **Entity**: `brandings` table with comprehensive customization fields
+- **Color Scheme**: Primary, secondary, accent, background, text colors (validated hex)
+- **Typography**: Body font and heading font families
+- **Widget Customization**: Position (4 corners), border radius, welcome message, placeholder, header text, avatar URL
+- **Email Customization**: From name, reply-to, header logo, footer text, accent color
+- **Custom CSS**: Up to 5KB of injectable CSS with platform CSS variable system
+- **CSS Variables API**: `GET /api/branding/css/:ownerId` generates CSS custom properties (--ab-primary, --ab-secondary, etc.)
+- **Public API**: `GET /api/branding/public/:ownerId` for widget/embed consumption
+- **"Powered by" Control**: Toggle Agentbase branding visibility
+- **Frontend**: 4-tab configuration page:
+  - Colors & Fonts with live color pickers and live preview
+  - Widget settings (position, radius, messages)
+  - Email branding (from name, reply-to, logo, footer)
+  - Custom CSS editor with variable documentation
+
+### SSO (SAML/OIDC)
+- **Entity**: `sso_configs` table supporting both SAML and OIDC providers
+- **SAML Support**: Entry point URL, issuer, X.509 certificate, callback URL
+  - SP metadata XML generation: `GET /api/sso/:id/saml-metadata`
+- **OIDC Support**: Discovery URL, client ID/secret, configurable scopes
+- **Attribute Mapping**: Configurable mapping for email, firstName, lastName, displayName, role, groups
+- **Auto-Provisioning**: Automatically create user accounts on first SSO login
+- **Domain Restriction**: Limit SSO to specific email domains
+- **Enforcement**: Option to require SSO for all team members
+- **Login Tracking**: Total logins count and last login timestamp per SSO config
+- **Security**: Client secrets and certificates sanitized in API responses
+- **API Endpoints**: Full CRUD + toggle enable/disable
+
+### Data Export & Import
+- **Export Formats**: JSON (structured, portable) and CSV (tabular, spreadsheet-compatible)
+- **Export Resources**:
+  - `all`: Full backup with applications + conversations
+  - `applications`: Application configs only
+  - `conversations`: Chat histories with messages and metadata
+  - `analytics`: Analytics event data
+- **Import**: Upload JSON file to bulk-create applications as drafts
+  - Error handling per record with summary report
+  - Automatic slug deduplication on import
+- **CSV Generation**: Automatic JSON flattening with nested key notation, proper escaping
+- **Security**: Exports never include passwords, API keys, or billing data
+- **Download**: Streams file with Content-Disposition for browser download
+- **Frontend**: Split export/import page with:
+  - Export: Resource selector, format picker (radio cards), download button
+  - Import: Drag-and-drop file upload, result summary with error details
+  - Data info section explaining contents, portability, and limits
+
+### System Health Monitoring
+- **Service Checks**: Real-time health for PostgreSQL, MongoDB, Redis, and AI Service
+  - Each with latency measurement and error details
+  - AI Service checked via HTTP health endpoint with 5s timeout
+- **System Metrics**: OS-level memory (total/used/free/percent), CPU (cores, load averages), process (RSS, PID, uptime)
+- **Platform Statistics**: Total users, applications, active subscriptions, plan breakdown
+- **API Endpoints**: `GET /api/system/health`, `GET /api/system/stats`
+- **Frontend Dashboard**:
+  - Overall status banner (healthy/degraded/down with color coding)
+  - Service status cards with latency and error display
+  - Memory usage bar with color thresholds (green/amber/red)
+  - CPU load averages (1m/5m/15m)
+  - Process metrics (memory, uptime) in card grid
+  - Platform stats with plan breakdown
+  - Auto-refresh toggle (15-second interval)
+
+### Navigation Updates
+- Main nav: Added Branding, Domains, Export/Import
+- Admin nav: Added System Health
+- Full sidebar: Overview → Applications → Knowledge → Marketplace → Analytics → Team → Billing → Webhooks → My Plugins → Themes → Branding → Domains → Export/Import → Settings | Admin: Admin Panel → Audit Log → System Health

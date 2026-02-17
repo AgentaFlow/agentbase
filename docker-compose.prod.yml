@@ -101,7 +101,6 @@ services:
       MONGO_URI: mongodb://${MONGO_USER:-agentbase}:${MONGO_PASSWORD}@mongo:27017/agentbase?authSource=admin
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
-      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
     expose:
       - "8000"
 

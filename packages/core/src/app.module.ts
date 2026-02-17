@@ -20,6 +20,17 @@ import { MarketplaceModule } from './modules/marketplace/marketplace.module';
 import { EmailModule } from './modules/email/email.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
 import { AuditModule } from './modules/audit/audit.module';
+import { TeamsModule } from './modules/teams/teams.module';
+import { KnowledgeModule } from './modules/knowledge/knowledge.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
+import { TemplatesModule } from './modules/templates/templates.module';
+import { WorkflowsModule } from './modules/workflows/workflows.module';
+import { ConversationsModule } from './modules/conversations/conversations.module';
+import { CustomDomainsModule } from './modules/custom-domains/custom-domains.module';
+import { BrandingModule } from './modules/branding/branding.module';
+import { SsoModule } from './modules/sso/sso.module';
+import { DataExportModule } from './modules/data-export/data-export.module';
+import { SystemHealthModule } from './modules/system-health/system-health.module';
 
 @Module({
   imports: [
@@ -77,6 +88,17 @@ import { AuditModule } from './modules/audit/audit.module';
     EmailModule,
     UploadsModule,
     AuditModule,
+    TeamsModule,
+    KnowledgeModule,
+    NotificationsModule,
+    TemplatesModule,
+    WorkflowsModule,
+    ConversationsModule,
+    CustomDomainsModule,
+    BrandingModule,
+    SsoModule,
+    DataExportModule,
+    SystemHealthModule,
   ],
 })
 export class AppModule {}
