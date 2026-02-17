@@ -16,7 +16,7 @@ export class SsoConfig {
   id: string;
 
   @Column({ type: 'uuid', nullable: true })
-  teamId: string;
+  teamId: string | null;
 
   @Column({ type: 'uuid' })
   createdBy: string;

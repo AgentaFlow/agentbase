@@ -33,7 +33,7 @@ export class ApiKey {
   owner: User;
 
   @Column({ type: 'uuid', nullable: true })
-  applicationId: string;
+  applicationId: string | null;
 
   @ManyToOne(() => Application, { onDelete: 'CASCADE', nullable: true })
   @JoinColumn({ name: 'applicationId' })

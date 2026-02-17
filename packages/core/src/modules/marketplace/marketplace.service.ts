@@ -30,7 +30,7 @@ export class MarketplaceService {
     const { search, sort = 'popular', page = 1, limit = 20 } = options;
 
     const query = this.pluginRepo.createQueryBuilder('p')
-      .where('p.status = :status', { status: PluginStatus.ACTIVE });
+      .where('p.status = :status', { status: PluginStatus.PUBLISHED });
 
     if (search) {
       query.andWhere('(LOWER(p.name) LIKE :s OR LOWER(p.description) LIKE :s)', {
@@ -174,7 +174,7 @@ export class MarketplaceService {
    */
   async getFeatured(limit = 6) {
     const plugins = await this.pluginRepo.find({
-      where: { status: PluginStatus.ACTIVE },
+      where: { status: PluginStatus.PUBLISHED },
       take: limit,
       order: { createdAt: 'DESC' },
     });

@@ -36,7 +36,7 @@ export class ApiKeysService {
       rateLimit: data.rateLimit || 100,
     });
 
-    const saved = await this.apiKeyRepo.save(apiKey);
+    const saved = await this.apiKeyRepo.save(apiKey) as ApiKey;
     this.logger.log(`API key created: ${saved.keyPrefix} for user ${ownerId}`);
 
     return { apiKey: saved, rawKey };

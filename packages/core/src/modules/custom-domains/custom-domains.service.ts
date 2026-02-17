@@ -50,7 +50,7 @@ export class CustomDomainsService {
       status: DomainStatus.PENDING,
     });
 
-    const saved = await this.domainRepo.save(record);
+    const saved = await this.domainRepo.save(record) as CustomDomain;
 
     await this.audit.log({
       userId: ownerId,

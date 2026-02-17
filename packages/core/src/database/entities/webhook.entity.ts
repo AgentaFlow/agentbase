@@ -54,8 +54,8 @@ export class Webhook {
   @Column({ type: 'int', default: 0 })
   failedDeliveries: number;
 
-  @Column({ nullable: true })
-  lastError: string;
+  @Column({ nullable: true, type: 'varchar' })
+  lastError: string | null;
 
   @CreateDateColumn()
   createdAt: Date;

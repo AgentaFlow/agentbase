@@ -80,7 +80,8 @@ export class HookEngine {
     const hooks = this.actions.get(hookName) || [];
     for (const hook of hooks) {
       try {
-        await hook.callback(context, ...args);
+        const callback = hook.callback as ActionCallback;
+        await callback(context, ...args);
       } catch (error) {
         this.logger.error(
           `Action hook error: ${hookName} from plugin ${hook.pluginId}: ${error}`,

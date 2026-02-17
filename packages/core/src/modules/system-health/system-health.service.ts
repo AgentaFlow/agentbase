@@ -9,14 +9,14 @@ import { Application } from '../../database/entities/application.entity';
 import { Subscription } from '../../database/entities/subscription.entity';
 import * as os from 'os';
 
-interface ServiceStatus {
+export interface ServiceStatus {
   name: string;
   status: 'healthy' | 'degraded' | 'down';
   latencyMs?: number;
   details?: Record<string, any>;
 }
 
-interface SystemMetrics {
+export interface SystemMetrics {
   uptime: number;
   memory: { total: number; used: number; free: number; percent: number };
   cpu: { cores: number; loadAvg: number[] };

@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { InjectModel } from '@nestjs/mongoose';
 import { Repository } from 'typeorm';
 import { Model } from 'mongoose';
-import { Application } from '../../database/entities/application.entity';
+import { Application, AppStatus } from '../../database/entities/application.entity';
 import { Conversation, ConversationDocument } from '../../database/schemas/conversation.schema';
 import { AuditService } from '../audit/audit.service';
 
@@ -83,11 +83,10 @@ export class DataExportService {
       name: app.name,
       slug: app.slug,
       description: app.description,
-      systemPrompt: app.systemPrompt,
-      model: app.model,
-      temperature: app.temperature,
-      maxTokens: app.maxTokens,
-      isPublic: app.isPublic,
+      systemPrompt: app.config?.systemPrompt,
+      model: app.config?.aiModel,
+      temperature: app.config?.temperature,
+      maxTokens: app.config?.maxTokens,
       status: app.status,
       createdAt: app.createdAt,
       updatedAt: app.updatedAt,
@@ -166,13 +165,14 @@ export class DataExportService {
           name: item.name || 'Imported App',
           slug: `${item.slug || 'imported'}-${Date.now()}`,
           description: item.description,
-          systemPrompt: item.systemPrompt,
-          model: item.model || 'gpt-4',
-          temperature: item.temperature ?? 0.7,
-          maxTokens: item.maxTokens ?? 2048,
-          isPublic: false,
+          config: {
+            systemPrompt: item.systemPrompt,
+            aiModel: item.model || 'gpt-4',
+            temperature: item.temperature ?? 0.7,
+            maxTokens: item.maxTokens ?? 2048,
+          },
           ownerId: userId,
-          status: 'draft',
+          status: AppStatus.DRAFT,
         });
         await this.appRepo.save(app);
         imported++;

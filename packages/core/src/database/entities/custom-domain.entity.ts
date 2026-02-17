@@ -33,7 +33,7 @@ export class CustomDomain {
   owner: User;
 
   @Column({ type: 'uuid', nullable: true })
-  applicationId: string;
+  applicationId: string | null;
 
   @ManyToOne(() => Application, { nullable: true })
   @JoinColumn({ name: 'applicationId' })

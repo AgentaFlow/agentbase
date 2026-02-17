@@ -32,7 +32,7 @@ export class SsoService {
       isEnabled: false,
     });
 
-    const saved = await this.ssoRepo.save(config);
+    const saved: SsoConfig = (await this.ssoRepo.save(config)) as unknown as SsoConfig;
 
     await this.audit.log({
       userId,
