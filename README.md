@@ -131,6 +131,7 @@ Agentbase supports multiple AI providers out of the box:
 
 - **OpenAI** — GPT-4, GPT-4o, GPT-3.5 Turbo
 - **Anthropic** — Claude Sonnet 4.5, Claude Haiku 4.5
+- **Google** — Gemini 2.0 Flash, Gemini 1.5 Pro, Gemini 1.5 Flash
 - **HuggingFace** — Coming soon
 
 Set your API keys in `.env` and Agentbase handles the rest.
@@ -153,7 +154,7 @@ Set your API keys in `.env` and Agentbase handles the rest.
 - CRUD for Applications, Plugins, Themes, Users
 - WordPress-style hook engine (actions + filters)
 - Plugin SDK with lifecycle hooks
-- Multi-provider AI abstraction (OpenAI, Anthropic)
+- Multi-provider AI abstraction (OpenAI, Anthropic, Google Gemini)
 - Docker Compose for local databases (PostgreSQL, MongoDB, Redis)
 
 ## Contributing
@@ -256,7 +257,7 @@ Built by [AgentaFlow](https://www.agentaflow.com)
 - **`GET /api/analytics/:appId/events`** — Raw event stream
 - MongoDB-backed event tracking (message_sent, message_received, conversation_started, widget_loaded, api_call, error)
 - Daily activity bar chart
-- Provider breakdown (OpenAI vs Anthropic usage)
+- Provider breakdown (OpenAI vs Anthropic vs Gemini usage)
 - Source breakdown (dashboard vs widget vs API)
 - Estimated cost calculation based on token usage
 - Per-app analytics tab in application detail page

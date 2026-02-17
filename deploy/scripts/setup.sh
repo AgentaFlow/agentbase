@@ -42,7 +42,7 @@ if [ ! -f .env ]; then
   echo ""
   echo "⚠️  IMPORTANT: Edit .env and set:"
   echo "   - FRONTEND_URL (your domain, e.g., https://app.agentbase.dev)"
-  echo "   - OPENAI_API_KEY and/or ANTHROPIC_API_KEY"
+  echo "   - OPENAI_API_KEY, ANTHROPIC_API_KEY, and/or GEMINI_API_KEY"
   echo "   - STRIPE_SECRET_KEY (if using billing)"
   echo "   - SMTP_HOST, SMTP_USER, SMTP_PASSWORD (for emails)"
   echo ""

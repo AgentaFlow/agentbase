@@ -113,7 +113,7 @@ Agentbase is built as a hybrid architecture platform with Node.js/TypeScript han
 - **Backend:** Node.js/NestJS (core) + Python/FastAPI (AI services)
 - **Frontend:** Next.js 14+ with TypeScript
 - **Databases:** PostgreSQL (core data) + MongoDB (AI content)
-- **AI Integration:** OpenAI, Anthropic, HuggingFace support
+- **AI Integration:** OpenAI, Anthropic, Gemini, HuggingFace support
 - **Infrastructure:** Docker, Kubernetes-ready
 - **License:** GNU GPL v3
 
@@ -367,7 +367,7 @@ Agentbase is built as a hybrid architecture platform with Node.js/TypeScript han
 
 ### 4.4 Infrastructure & Deployment
 
-- Create Terraform/Pulumi infrastructure as code
+- Create Terraform infrastructure as code
 - Set up Kubernetes manifests
 - Configure auto-scaling policies
 - Add health checks and readiness probes
@@ -937,6 +937,12 @@ Agentbase is built as a hybrid architecture platform with Node.js/TypeScript han
   - [x] Create Claude provider class
   - [x] Support Claude 3 Opus, Sonnet, Haiku
   - [x] Handle streaming responses
+- [x] Add Google Gemini integration:
+  - [x] Install google-generativeai SDK
+  - [x] Create Gemini provider class
+  - [x] Support Gemini 2.0 Flash, 1.5 Pro, 1.5 Flash models
+  - [x] Handle streaming responses
+  - [x] Add GEMINI_API_KEY to configuration
 - [ ] Integrate HuggingFace models:
   - [ ] Install transformers library
   - [ ] Create HuggingFace provider class
@@ -1083,7 +1089,7 @@ Agentbase is built as a hybrid architecture platform with Node.js/TypeScript han
 #### 4.4 Infrastructure & Deployment
 - [ ] Choose cloud provider (AWS, GCP, or Azure)
 - [ ] Create infrastructure as code:
-  - [ ] Set up Terraform or Pulumi project
+  - [ ] Set up Terraform project
   - [ ] Define VPC and networking
   - [ ] Define compute resources (ECS, GKE, or AKS)
   - [ ] Define managed databases (RDS, Cloud SQL)
