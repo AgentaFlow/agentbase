@@ -164,7 +164,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines.
 
 GNU General Public License v3.0 — see [LICENSE](LICENSE)
 
-Built by [AgentaFlow](https://agentaflow.com)
+Built by [AgentaFlow](https://www.agentaflow.com)
 
 ---
 
