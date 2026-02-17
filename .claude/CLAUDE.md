@@ -578,7 +578,7 @@ Agentbase is built as a hybrid architecture platform with Node.js/TypeScript han
   - [x] `/packages/ai-service` - Python FastAPI microservice
   - [x] `/packages/shared` - Shared TypeScript types
   - [x] `/packages/plugins` - Plugin SDK and examples
-  - [ ] `/packages/themes` - Theme system and starters
+  - [x] `/packages/themes` - Theme system and starters
   - [ ] `/docs` - Documentation site
 
 #### 1.2 Development Environment Configuration
@@ -598,7 +598,7 @@ Agentbase is built as a hybrid architecture platform with Node.js/TypeScript han
 - [x] Set up @nestjs/config for environment variables
 - [x] Configure Swagger/OpenAPI documentation
 - [x] Add health check endpoint (`/health`)
-- [ ] Create basic error handling middleware
+- [x] Create basic error handling middleware
 - [ ] Set up logging with Winston or Pino
 
 #### 1.4 Python AI Service Setup (`/packages/ai-service`)
@@ -630,10 +630,15 @@ Agentbase is built as a hybrid architecture platform with Node.js/TypeScript han
   - [x] Applications table (id, org_id, name, config, status)
   - [x] Plugins table (id, name, version, manifest, status)
   - [x] Themes table (id, name, version, manifest, preview_url)
-  - [ ] Subscriptions table (id, org_id, plan, status, stripe_id)
+  - [x] Subscriptions table (id, org_id, plan, status, stripe_id)
+  - [x] APIKeys table (id, user_id, app_id, key, rate_limit)
+  - [x] Webhooks table (id, app_id, url, events, secret)
 - [x] Design MongoDB collections:
   - [x] ai_conversations (id, app_id, messages, metadata)
   - [x] prompts (id, app_id, template, variables)
+  - [x] analytics_events (id, app_id, event_type, data, timestamp)
+  - [x] audit_logs (id, user_id, action, resource, timestamp)
+  - [x] plugin_reviews (id, plugin_id, user_id, rating, comment)
   - [ ] model_configs (id, app_id, provider, model, settings)
   - [ ] vector_embeddings (id, conversation_id, embedding, metadata)
 - [ ] Create TypeORM migrations for PostgreSQL
@@ -758,12 +763,12 @@ Agentbase is built as a hybrid architecture platform with Node.js/TypeScript han
   - [x] `POST /api/ai/conversations/:id/messages` - Send message
   - [x] `GET /api/ai/conversations/:id` - Get conversation history
   - [x] `GET /api/ai/conversations/:id/stream` - Stream responses (SSE)
-- [ ] Build prompt template system:
-  - [ ] Create prompt template parser
-  - [ ] Support variable substitution
-  - [ ] Create reusable prompt templates
+- [x] Build prompt template system:
+  - [x] Create prompt template parser
+  - [x] Support variable substitution
+  - [x] Create reusable prompt templates
 - [x] Add streaming response support (Server-Sent Events)
-- [ ] Implement rate limiting per user/organization
+- [x] Implement rate limiting per user/organization
 - [ ] Implement quota management system
 - [x] Add conversation storage to MongoDB
 - [ ] Write unit tests for AI providers
@@ -792,29 +797,29 @@ Agentbase is built as a hybrid architecture platform with Node.js/TypeScript han
 - [ ] Write integration tests for application endpoints
 
 #### 2.7 Admin Dashboard Frontend
-- [ ] Create dashboard layout with navigation:
-  - [ ] Top navigation bar
-  - [ ] Sidebar menu
-  - [ ] Main content area
-- [ ] Build application management pages:
-  - [ ] Applications list view (grid/table)
-  - [ ] Create application modal/page
-  - [ ] Application detail/settings view
+- [x] Create dashboard layout with navigation:
+  - [x] Top navigation bar
+  - [x] Sidebar menu
+  - [x] Main content area
+- [x] Build application management pages:
+  - [x] Applications list view (grid/table)
+  - [x] Create application modal/page
+  - [x] Application detail/settings view
   - [ ] Application configuration UI
-- [ ] Create plugin marketplace browser:
-  - [ ] Plugin grid/list with search
+- [x] Create plugin marketplace browser:
+  - [x] Plugin grid/list with search
   - [ ] Plugin detail modal
-  - [ ] Install/activate buttons (mock initially)
+  - [x] Install/activate buttons (mock initially)
   - [ ] Use mock data for now
-- [ ] Build theme selection UI:
-  - [ ] Theme gallery with previews
+- [x] Build theme selection UI:
+  - [x] Theme gallery with previews
   - [ ] Theme customization panel
   - [ ] Live preview functionality
   - [ ] Apply theme button
-- [ ] Create user settings page:
-  - [ ] Profile information form
-  - [ ] Password change form
-  - [ ] API key management (placeholder)
+- [x] Create user settings page:
+  - [x] Profile information form
+  - [x] Password change form
+  - [x] API key management (placeholder)
 - [ ] Implement AI configuration interface:
   - [ ] Model selection dropdown
   - [ ] API key configuration
@@ -823,6 +828,40 @@ Agentbase is built as a hybrid architecture platform with Node.js/TypeScript han
 - [ ] Add loading states and error handling
 - [ ] Make all pages responsive
 - [ ] Write E2E tests for critical user flows
+
+#### 2.7a Additional Platform Modules (Implemented Beyond Original Plan)
+- [x] **API Keys Module:**
+  - [x] Create API key entity and service
+  - [x] API key generation and validation
+  - [x] Rate limiting per API key
+  - [x] API key guard for authentication
+  - [x] Frontend API key management UI
+- [x] **Analytics Module:**
+  - [x] Analytics events schema and tracking
+  - [x] Analytics service and controller
+  - [x] Frontend analytics dashboard page
+- [x] **Billing Module:**
+  - [x] Subscription entity
+  - [x] Billing service and controller
+  - [x] Frontend billing dashboard page
+- [x] **Webhooks Module:**
+  - [x] Webhook entity
+  - [x] Webhook service and controller
+  - [x] Frontend webhooks management page
+- [x] **Audit Module:**
+  - [x] Audit log schema
+  - [x] Audit service and controller
+  - [x] Frontend audit logs page
+- [x] **Uploads Module:**
+  - [x] File upload service and controller
+  - [x] Upload handling infrastructure
+- [x] **Admin Module:**
+  - [x] Admin-only endpoints
+  - [x] Frontend admin dashboard page
+- [x] **Prompts Module:**
+  - [x] Prompt template CRUD
+  - [x] Prompt service and controller
+  - [x] Template variable substitution
 
 #### 2.8 Integration & Testing
 - [ ] Connect frontend to backend authentication
