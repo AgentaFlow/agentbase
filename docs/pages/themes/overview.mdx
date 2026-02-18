@@ -1,0 +1,52 @@
+# Theme Development
+
+Agentbase themes control the visual appearance of AI applications,
+including the chat widget, layouts, and color schemes.
+
+## Theme Structure
+
+```
+my-theme/
+├── manifest.json     # Theme metadata
+├── styles/
+│   └── theme.css     # CSS custom properties
+└── components/
+    ├── layout.tsx    # Layout wrapper
+    ├── header.tsx    # Header component
+    └── chat.tsx      # Chat interface
+```
+
+## Built-in Presets
+
+Agentbase ships with four theme presets:
+
+| Preset      | Description                     |
+| ----------- | ------------------------------- |
+| **Default** | Clean, professional light theme |
+| **Dark**    | Dark mode with high contrast    |
+| **Minimal** | Stripped-down, content-focused  |
+| **Vibrant** | Bold colors and modern styling  |
+
+## Customization API
+
+Themes can be customized via the REST API:
+
+```bash
+# Set a theme
+POST /api/applications/:id/theme
+{ "themeId": "dark" }
+
+# Customize theme
+PUT /api/applications/:id/theme/customize
+{
+  "colors": { "primary": "#4c6ef5", "background": "#1a1a2e" },
+  "typography": { "fontFamily": "Inter", "fontSize": "16px" },
+  "layout": { "sidebarPosition": "left", "maxWidth": "1200px" }
+}
+```
+
+## Next Steps
+
+- Browse [available presets](/themes/presets)
+- Learn about [CSS custom properties](/themes/css-variables)
+- Create a [custom theme from scratch](/themes/custom)

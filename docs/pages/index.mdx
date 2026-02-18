@@ -1,0 +1,47 @@
+# Welcome to Agentbase
+
+Agentbase is the modern AI-first equivalent of WordPress — build and deploy AI-powered
+applications without worrying about infrastructure.
+
+## Quick Start
+
+```bash
+# Clone and install
+git clone https://github.com/AgentaFlow/agentbase.git
+cd agentbase
+pnpm install
+
+# Start infrastructure (PostgreSQL, MongoDB, Redis)
+docker compose up -d
+
+# Run database migrations
+pnpm db:migrate
+
+# Start all services in development mode
+pnpm dev
+```
+
+The platform will be available at:
+
+- **Frontend:** http://localhost:3000
+- **Core API:** http://localhost:3001/api
+- **API Docs (Swagger):** http://localhost:3001/api/docs
+- **AI Service:** http://localhost:8000/api
+
+## What's Inside
+
+| Package               | Description                                               |
+| --------------------- | --------------------------------------------------------- |
+| `packages/core`       | NestJS backend API (auth, plugins, themes, billing, etc.) |
+| `packages/frontend`   | Next.js 14+ dashboard & admin UI                          |
+| `packages/ai-service` | Python FastAPI microservice (OpenAI, Anthropic, Gemini)   |
+| `packages/shared`     | Shared TypeScript types                                   |
+| `packages/plugins`    | Plugin SDK and example plugins                            |
+| `packages/themes`     | Theme engine and presets                                  |
+
+## Learn More
+
+- [Getting Started](/getting-started) — installation and first project
+- [Plugin Development](/plugins/overview) — build custom plugins
+- [Theme Development](/themes/overview) — create and customize themes
+- [API Reference](/api/overview) — full REST API documentation

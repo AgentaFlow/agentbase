@@ -1,0 +1,59 @@
+# API Reference
+
+The Agentbase REST API is served from the core NestJS backend at `http://localhost:3001/api`.
+
+Interactive Swagger documentation is available at `/api/docs` when running in development mode.
+
+## Authentication
+
+Most endpoints require a JWT bearer token:
+
+```bash
+# Register
+POST /api/auth/register
+{ "email": "user@example.com", "password": "secret", "displayName": "User" }
+
+# Login
+POST /api/auth/login
+{ "email": "user@example.com", "password": "secret" }
+# Returns: { "access_token": "eyJ...", "refresh_token": "eyJ..." }
+
+# Use the token
+GET /api/applications
+Authorization: Bearer eyJ...
+```
+
+## Core Endpoints
+
+| Resource          | Endpoints                                                                     |
+| ----------------- | ----------------------------------------------------------------------------- |
+| **Auth**          | `POST /auth/register`, `POST /auth/login`, `POST /auth/refresh`               |
+| **Users**         | `GET /users/me`, `PUT /users/me`                                              |
+| **Applications**  | `GET /applications`, `POST /applications`, `GET/PUT/DELETE /applications/:id` |
+| **Plugins**       | `GET /plugins`, `GET /plugins/:id`, install/activate/deactivate per app       |
+| **Themes**        | `GET /themes`, `GET /themes/:id`, set/customize per app                       |
+| **Conversations** | `GET /conversations`, `POST /conversations`, send messages, stream            |
+| **Marketplace**   | `GET /marketplace/browse`, `GET /marketplace/featured`                        |
+| **API Keys**      | `GET /api-keys`, `POST /api-keys`, `DELETE /api-keys/:id`                     |
+| **Teams**         | `GET /teams`, `POST /teams`, invite/remove members                            |
+| **Webhooks**      | `GET /webhooks`, `POST /webhooks`, `DELETE /webhooks/:id`                     |
+| **Templates**     | `GET /templates`, `POST /templates/:id/deploy`                                |
+| **Knowledge**     | `POST /knowledge`, upload documents, search                                   |
+
+## Public API (Widget)
+
+The embeddable widget uses API key authentication via the `X-API-Key` header:
+
+```bash
+POST /api/public/chat
+X-API-Key: agb_...
+{ "message": "Hello!", "applicationId": "..." }
+```
+
+## Rate Limiting
+
+API responses include rate limit headers:
+
+- `X-RateLimit-Limit` — max requests per window
+- `X-RateLimit-Remaining` — remaining requests
+- `X-RateLimit-Reset` — window reset timestamp

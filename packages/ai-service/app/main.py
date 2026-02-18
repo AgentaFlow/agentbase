@@ -1,20 +1,28 @@
 """Agentbase AI Service - FastAPI microservice for AI integrations."""
 
-from fastapi import FastAPI
+import time
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 from app.core.config import settings
 from app.core.database import connect_db, close_db
+from app.core.logging import setup_logging, get_logger
 from app.routers import health, conversations, models, streaming
+
+# Initialize structured logging
+setup_logging()
+logger = get_logger("agentbase.ai")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Manage application startup and shutdown."""
+    logger.info("starting_ai_service", port=settings.AI_SERVICE_PORT)
     await connect_db()
     yield
     await close_db()
+    logger.info("ai_service_stopped")
 
 
 app = FastAPI(
@@ -32,6 +40,23 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    """Log all HTTP requests with method, path, status and duration."""
+    start = time.perf_counter()
+    response = await call_next(request)
+    duration_ms = round((time.perf_counter() - start) * 1000, 1)
+    logger.info(
+        "http_request",
+        method=request.method,
+        path=request.url.path,
+        status=response.status_code,
+        duration_ms=duration_ms,
+    )
+    return response
+
 
 # Routers
 app.include_router(health.router, prefix="/api", tags=["health"])

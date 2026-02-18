@@ -1,0 +1,80 @@
+# Plugin Development
+
+Agentbase uses a WordPress-inspired hook/filter system for extensibility.
+
+## Plugin Structure
+
+Every plugin needs a manifest and an entry point:
+
+```
+my-plugin/
+├── manifest.json     # Plugin metadata
+├── src/
+│   └── index.ts      # Entry point
+└── package.json
+```
+
+## Manifest
+
+```json
+{
+  "name": "my-plugin",
+  "version": "1.0.0",
+  "description": "My custom Agentbase plugin",
+  "author": "Your Name",
+  "hooks": ["before_message", "after_response"],
+  "permissions": ["conversations:read"]
+}
+```
+
+## Using the SDK
+
+```typescript
+import {
+  createPlugin,
+  registerHook,
+  registerFilter,
+} from "@agentbase/plugin-sdk";
+
+const plugin = createPlugin({
+  name: "my-plugin",
+  version: "1.0.0",
+  activate() {
+    registerHook("before_message", async (message) => {
+      console.log("User sent:", message.content);
+    });
+
+    registerFilter("response_text", async (text) => {
+      return text + "\n\n— Powered by My Plugin";
+    });
+  },
+  deactivate() {
+    console.log("Plugin deactivated");
+  },
+});
+
+export default plugin;
+```
+
+## Available Hooks
+
+| Hook             | Description                              | Payload                        |
+| ---------------- | ---------------------------------------- | ------------------------------ |
+| `before_message` | Fires before a user message is processed | `{ content, userId, appId }`   |
+| `after_response` | Fires after AI generates a response      | `{ response, conversationId }` |
+| `on_install`     | Fires when plugin is installed           | `{ appId, config }`            |
+| `on_activate`    | Fires when plugin is activated           | `{ appId }`                    |
+
+## Available Filters
+
+| Filter            | Description             | Input    |
+| ----------------- | ----------------------- | -------- |
+| `response_text`   | Modify AI response text | `string` |
+| `system_prompt`   | Modify system prompt    | `string` |
+| `message_content` | Modify user message     | `string` |
+
+## Next Steps
+
+- See the [Hello World example](/plugins/examples) for a complete walkthrough
+- Read about [hooks and filters](/plugins/hooks-filters) in depth
+- Learn about [publishing to the marketplace](/plugins/publishing)

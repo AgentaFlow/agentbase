@@ -1,0 +1,75 @@
+# Getting Started
+
+## Prerequisites
+
+- **Node.js** 20+ and **pnpm** 9+
+- **Python** 3.11+
+- **Docker** and Docker Compose (for databases)
+
+## Installation
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/AgentaFlow/agentbase.git
+cd agentbase
+```
+
+### 2. Install Dependencies
+
+```bash
+pnpm install
+```
+
+### 3. Environment Configuration
+
+Copy the example environment file and update values as needed:
+
+```bash
+cp .env.example .env
+```
+
+Key variables to set:
+
+| Variable            | Description                   | Default        |
+| ------------------- | ----------------------------- | -------------- |
+| `OPENAI_API_KEY`    | OpenAI API key for GPT models | —              |
+| `ANTHROPIC_API_KEY` | Anthropic API key for Claude  | —              |
+| `GEMINI_API_KEY`    | Google Gemini API key         | —              |
+| `JWT_SECRET`        | Secret for signing JWT tokens | `CHANGE_ME...` |
+
+### 4. Start Infrastructure
+
+```bash
+docker compose up -d
+```
+
+This starts PostgreSQL, MongoDB, and Redis.
+
+### 5. Run Migrations
+
+```bash
+pnpm db:migrate
+```
+
+### 6. Start Development Servers
+
+```bash
+pnpm dev
+```
+
+This starts all three services concurrently (core, frontend, ai-service).
+
+## First Steps
+
+1. Open http://localhost:3000 and register an account
+2. Create your first AI application
+3. Try a conversation in the chat interface
+4. Browse the plugin marketplace
+5. Customize themes in the dashboard
+
+## Next Steps
+
+- [Plugin Development](/plugins/overview) — extend the platform
+- [Theme Development](/themes/overview) — customize the look
+- [API Reference](/api/overview) — integrate via REST APIs
