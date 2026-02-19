@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import Link from "next/link";
 
 export default function Home() {
   return (
@@ -31,8 +31,10 @@ export default function Home() {
       <main className="flex-1 flex items-center justify-center px-6">
         <div className="max-w-3xl text-center">
           <h1 className="text-5xl font-bold text-slate-900 mb-6 leading-tight">
-            WordPress for{' '}
-            <span className="text-brand-600">AI Applications</span>
+            Similar to WordPress <br />
+            <span className="text-brand-600">
+              Made for AI Native Applications
+            </span>
           </h1>
           <p className="text-xl text-slate-600 mb-8 max-w-2xl mx-auto">
             Build, deploy, and manage AI-powered applications without the
@@ -62,8 +64,8 @@ export default function Home() {
               </div>
               <h3 className="font-semibold text-lg mb-2">Multi-Provider AI</h3>
               <p className="text-slate-600">
-                OpenAI, Anthropic, HuggingFace — swap providers with a single
-                config change. No vendor lock-in.
+                OpenAI, Anthropic, Gemini, or HuggingFace — swap providers with
+                a single config change. No vendor lock-in.
               </p>
             </div>
             <div className="bg-white rounded-xl p-6 shadow-sm border">
@@ -82,8 +84,8 @@ export default function Home() {
               </div>
               <h3 className="font-semibold text-lg mb-2">Themes & Branding</h3>
               <p className="text-slate-600">
-                Customize the look and feel of your AI apps with themes. White-label
-                for enterprise.
+                Customize the look and feel of your AI apps with themes.
+                White-label for enterprise.
               </p>
             </div>
           </div>

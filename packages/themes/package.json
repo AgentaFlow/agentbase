@@ -1,1 +1,26 @@
-{"name":"@agentbase/themes","version":"0.1.0","private":true}
+{
+  "name": "@agentbase/themes",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "test": "jest --no-coverage"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.0",
+    "@types/jest": "^29.5.0",
+    "typescript": "^5.3.0"
+  },
+  "jest": {
+    "testRegex": ".*\\.spec\\.ts$",
+    "transform": {
+      "^.+\\.ts$": [
+        "ts-jest",
+        {
+          "diagnostics": false
+        }
+      ]
+    },
+    "testEnvironment": "node"
+  }
+}

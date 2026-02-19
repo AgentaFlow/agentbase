@@ -1,6 +1,6 @@
 # Agentbase
 
-**WordPress for AI Applications** — Build, deploy, and manage AI-powered applications without the complexity.
+**Similar to WordPress, made for AI Native Applications** — Build, deploy, and manage AI-powered applications without the complexity.
 
 Agentbase is an open-source platform that brings the WordPress model to AI development: plugins, themes, a marketplace, and a hosted option — everything you need to launch AI products fast.
 
@@ -25,16 +25,16 @@ agentbase/
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| **Core API** | Node.js + NestJS + TypeORM |
-| **Frontend** | Next.js 14 + React + Tailwind CSS |
-| **AI Service** | Python + FastAPI |
-| **SQL Database** | PostgreSQL 16 |
-| **Document DB** | MongoDB 7 |
-| **Cache** | Redis 7 |
+| Layer              | Technology                                    |
+| ------------------ | --------------------------------------------- |
+| **Core API**       | Node.js + NestJS + TypeORM                    |
+| **Frontend**       | Next.js 14 + React + Tailwind CSS             |
+| **AI Service**     | Python + FastAPI                              |
+| **SQL Database**   | PostgreSQL 16                                 |
+| **Document DB**    | MongoDB 7                                     |
+| **Cache**          | Redis 7                                       |
 | **Infrastructure** | Docker, Nginx, DigitalOcean Kubernetes (DOKS) |
-| **License** | GPL-3.0 |
+| **License**        | GPL-3.0                                       |
 
 ## Quick Start
 
@@ -66,6 +66,7 @@ pnpm dev
 ```
 
 Services will be available at:
+
 - **Frontend**: http://localhost:3000
 - **Core API**: http://localhost:3001
 - **API Docs**: http://localhost:3001/api/docs
@@ -82,6 +83,7 @@ pnpm dev:ai         # FastAPI AI service only
 ## Features
 
 ### 🤖 AI Integration
+
 - **Multi-Provider Support** — OpenAI (GPT-4, GPT-4o, GPT-3.5), Anthropic (Claude), Google Gemini (2.0 Flash, 1.5 Pro, 1.5 Flash)
 - **Streaming Responses** — Server-Sent Events (SSE) for real-time token-by-token output
 - **Conversation Management** — Create, continue, archive conversations per application
@@ -89,6 +91,7 @@ pnpm dev:ai         # FastAPI AI service only
 - **Knowledge Base (RAG)** — Vector-based semantic search with OpenAI embeddings, document chunking, and context retrieval
 
 ### 🔌 Plugin System
+
 - **WordPress-Style Hooks** — Actions and filters with priority-based execution
 - **Plugin SDK** — TypeScript interfaces and utilities for plugin development
 - **Lifecycle Management** — Install, activate, deactivate, uninstall with dependency resolution
@@ -96,24 +99,28 @@ pnpm dev:ai         # FastAPI AI service only
 - **Per-App Installation** — Install and configure plugins independently per application
 
 ### 🎨 Themes & Customization
+
 - **Theme Engine** — CSS custom property generation with 4 built-in presets
 - **White-Label Branding** — Custom colors, fonts, logos, email templates, and CSS injection
 - **Custom Domains** — DNS verification (CNAME/TXT), SSL tracking, domain settings
 - **Embeddable Widget** — Standalone JavaScript widget for any website with theme support
 
 ### 👥 Teams & Collaboration
+
 - **Organizations** — Team creation with member management (Owner/Admin/Member/Viewer roles)
 - **SSO Integration** — SAML 2.0 and OIDC support with auto-provisioning
 - **Notifications** — In-app notification system with real-time updates
 - **Audit Logging** — Comprehensive audit trail for all platform actions
 
 ### 💳 Billing & Subscriptions
+
 - **Stripe Integration** — 4 subscription tiers (Free, Starter $29/mo, Pro $99/mo, Enterprise $499/mo)
 - **Usage Metering** — Token and message quotas with enforcement before AI calls
 - **Webhooks** — 11 event types with HMAC-SHA256 signing and delivery tracking
 - **Data Export/Import** — JSON and CSV export, bulk import with error handling
 
 ### 🔐 Authentication & Security
+
 - **OAuth2** — GitHub and Google OAuth with automatic account linking
 - **JWT + Refresh Tokens** — Secure authentication with token rotation
 - **API Keys** — Create, scope, rate-limit, and revoke API keys per application
@@ -121,12 +128,14 @@ pnpm dev:ai         # FastAPI AI service only
 - **Security Hardening** — Helmet middleware, CORS, rate limiting, HSTS, CSP headers
 
 ### 📊 Analytics & Monitoring
+
 - **Usage Analytics** — Track conversations, messages, tokens, costs per application
 - **Event Tracking** — MongoDB-backed event stream (message_sent, widget_loaded, api_call, error)
 - **System Health** — Real-time service checks (PostgreSQL, MongoDB, Redis, AI Service)
 - **Platform Statistics** — Users, applications, subscriptions, resource usage
 
 ### 🚀 Deployment
+
 - **Docker Production Stack** — Multi-stage builds with Alpine images, health checks, non-root user
 - **Nginx Reverse Proxy** — SSL termination, rate limiting, security headers, SSE streaming
 - **Email Service** — SMTP transport with HTML templates (welcome, password reset, usage warnings)
@@ -136,6 +145,7 @@ pnpm dev:ai         # FastAPI AI service only
 ## API Endpoints
 
 ### Authentication
+
 - `POST /api/auth/register` — Register new user
 - `POST /api/auth/login` — Login
 - `GET /api/auth/me` — Get current user
@@ -148,6 +158,7 @@ pnpm dev:ai         # FastAPI AI service only
 - `POST /api/auth/password-reset/request` — Request password reset
 
 ### Applications
+
 - `POST /api/applications` — Create application
 - `GET /api/applications` — List user's applications
 - `GET /api/applications/:id` — Get application
@@ -155,6 +166,7 @@ pnpm dev:ai         # FastAPI AI service only
 - `DELETE /api/applications/:id` — Delete application
 
 ### Plugins
+
 - `GET /api/plugins` — List marketplace plugins
 - `POST /api/plugins` — Create plugin
 - `PUT /api/plugins/:id/publish` — Publish plugin
@@ -164,6 +176,7 @@ pnpm dev:ai         # FastAPI AI service only
 - `DELETE /api/applications/:appId/plugins/:id` — Uninstall plugin
 
 ### Prompt Templates
+
 - `POST /api/prompts` — Create prompt template
 - `GET /api/prompts?applicationId=` — List templates for app
 - `GET /api/prompts/:id` — Get prompt template
@@ -173,10 +186,12 @@ pnpm dev:ai         # FastAPI AI service only
 - `POST /api/prompts/render` — Render template with variables
 
 ### Themes
+
 - `GET /api/themes` — List themes
 - `POST /api/themes` — Create theme
 
 ### AI Service
+
 - `GET /api/ai/providers` — List AI providers
 - `POST /api/ai/conversations` — Create conversation
 - `POST /api/ai/conversations/:id/messages` — Send message (standard)
