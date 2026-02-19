@@ -94,7 +94,17 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="border-t bg-white px-6 py-6 text-center text-slate-500 text-sm">
-        <p>Agentbase is open source under GPL-3.0 · Built by AgentaFlow</p>
+        <p>
+          Agentbase is open source under GPL-3.0 · Built by{" "}
+          <a
+            href="https://www.agentaflow.com/"
+            className="text-brand-600 hover:underline"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            AgentaFlow
+          </a>
+        </p>
       </footer>
     </div>
   );
