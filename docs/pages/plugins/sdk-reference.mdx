@@ -1,0 +1,144 @@
+# Plugin SDK Reference
+
+Complete API reference for `@agentbase/plugin-sdk`.
+
+## `createPlugin(definition)`
+
+Factory function to create a plugin. Returns an `AgentbasePlugin` object.
+
+```typescript
+import { createPlugin } from "@agentbase/plugin-sdk";
+
+const plugin = createPlugin({
+  name: "my-plugin",
+  version: "1.0.0",
+  // ... see PluginDefinition below
+});
+```
+
+## PluginDefinition
+
+| Property       | Type                             | Required | Description              |
+| -------------- | -------------------------------- | -------- | ------------------------ |
+| `name`         | `string`                         | Yes      | Unique plugin identifier |
+| `version`      | `string`                         | Yes      | Semantic version         |
+| `description`  | `string`                         | No       | Plugin description       |
+| `author`       | `string`                         | No       | Author name              |
+| `permissions`  | `string[]`                       | No       | Required permissions     |
+| `hooks`        | `Record<string, HookCallback>`   | No       | Action hooks             |
+| `filters`      | `Record<string, FilterCallback>` | No       | Filter hooks             |
+| `settings`     | `Record<string, SettingDef>`     | No       | Configurable settings    |
+| `endpoints`    | `EndpointDefinition[]`           | No       | Custom API endpoints     |
+| `cronJobs`     | `CronJobDefinition[]`            | No       | Scheduled jobs           |
+| `webhooks`     | `WebhookDefinition[]`            | No       | Webhook handlers         |
+| `adminPages`   | `AdminPageDefinition[]`          | No       | Admin UI extensions      |
+| `onActivate`   | `(ctx) => void`                  | No       | Called on activation     |
+| `onDeactivate` | `(ctx) => void`                  | No       | Called on deactivation   |
+
+## PluginContext
+
+Passed to all hooks, filters, and lifecycle methods:
+
+```typescript
+interface PluginContext {
+  appId: string; // Current application ID
+  userId: string; // Current user ID
+  config: Record<string, any>; // Plugin configuration
+  api: PluginAPI; // Platform API access
+}
+```
+
+## PluginAPI
+
+```typescript
+interface PluginAPI {
+  // Configuration
+  getConfig(key: string): any;
+  setConfig(key: string, value: any): Promise<void>;
+
+  // HTTP requests
+  makeRequest(url: string, options?: RequestInit): Promise<Response>;
+
+  // Logging
+  log(message: string, level?: "info" | "warn" | "error"): void;
+
+  // Database (scoped key-value store)
+  db: PluginDatabaseAPI;
+
+  // Custom endpoints
+  registerEndpoint(definition: EndpointDefinition): void;
+
+  // Scheduled jobs
+  registerCronJob(definition: CronJobDefinition): void;
+
+  // Inter-plugin communication
+  events: PluginEventBus;
+
+  // Webhooks
+  registerWebhook(definition: WebhookDefinition): void;
+
+  // Admin UI
+  registerAdminPage(definition: AdminPageDefinition): void;
+}
+```
+
+## PluginDatabaseAPI
+
+Scoped key-value storage for plugins:
+
+```typescript
+interface PluginDatabaseAPI {
+  set(key: string, value: any): Promise<void>;
+  get(key: string): Promise<any>;
+  delete(key: string): Promise<boolean>;
+  keys(prefix?: string): Promise<string[]>;
+  find(filter: Record<string, any>, options?: QueryOptions): Promise<any[]>;
+  count(filter: Record<string, any>): Promise<number>;
+}
+```
+
+## Hook Helper Functions
+
+```typescript
+import {
+  registerHook,
+  registerFilter,
+  doAction,
+  applyFilter,
+} from "@agentbase/plugin-sdk";
+
+// Register a hook
+registerHook("conversation:start", async (context, conversationId) => {
+  // ...
+});
+
+// Register a filter
+registerFilter("prompt:modify", async (context, prompt) => {
+  return modifiedPrompt;
+});
+
+// Execute hooks programmatically
+await doAction("custom:event", context, eventData);
+
+// Apply filters programmatically
+const result = await applyFilter("custom:filter", context, initialValue);
+```
+
+## Plugin Event Bus
+
+For inter-plugin communication:
+
+```typescript
+import { pluginEventBus } from '@agentbase/plugin-sdk';
+
+// Emit an event
+await pluginEventBus.emit('my-plugin:data-ready', { items: [...] });
+
+// Listen for events
+pluginEventBus.on('other-plugin:updated', (data) => {
+  console.log('Other plugin updated:', data);
+});
+
+// Unsubscribe
+pluginEventBus.off('other-plugin:updated', handler);
+```

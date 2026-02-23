@@ -1,0 +1,157 @@
+# Examples
+
+Practical examples to get you started building with Agentbase.
+
+## Example 1: AI Chatbot Application
+
+Create a simple AI chatbot with a custom system prompt:
+
+```bash
+# Create the application
+POST /api/applications
+{
+  "name": "Support Bot",
+  "description": "Customer support chatbot"
+}
+
+# Configure the AI model
+POST /api/model-configs
+{
+  "applicationId": "<app-id>",
+  "provider": "openai",
+  "modelId": "gpt-4",
+  "isDefault": true,
+  "settings": {
+    "temperature": 0.3,
+    "maxTokens": 1024,
+    "systemPrompt": "You are a helpful customer support agent. Be concise and friendly."
+  }
+}
+
+# Start a conversation
+POST /api/conversations
+{
+  "applicationId": "<app-id>"
+}
+
+# Send a message
+POST /api/conversations/<conv-id>/messages
+{
+  "content": "How do I reset my password?"
+}
+```
+
+## Example 2: Plugin with Database
+
+A plugin that tracks conversation analytics:
+
+```typescript
+import { createPlugin } from "@agentbase/plugin-sdk";
+
+export default createPlugin({
+  name: "conversation-tracker",
+  version: "1.0.0",
+  hooks: {
+    "conversation:start": async (context, convId) => {
+      await context.api.db.set(`conv:${convId}`, {
+        startedAt: new Date(),
+        userId: context.userId,
+        messageCount: 0,
+      });
+    },
+    "message:afterReceive": async (context, message) => {
+      const key = `conv:${message.conversationId}`;
+      const data = await context.api.db.get(key);
+      if (data) {
+        data.messageCount += 1;
+        data.lastMessageAt = new Date();
+        await context.api.db.set(key, data);
+      }
+    },
+  },
+  endpoints: [
+    {
+      method: "GET",
+      path: "/stats",
+      auth: true,
+      handler: async (req, res) => {
+        const count = await req.api.db.count({});
+        res.json({ totalConversations: count });
+      },
+    },
+  ],
+});
+```
+
+## Example 3: Custom Theme
+
+Minimal dark theme configuration:
+
+```json
+{
+  "name": "Midnight",
+  "slug": "midnight",
+  "version": "1.0.0",
+  "manifest": {
+    "colorSchemes": {
+      "dark": {
+        "primary": "#818cf8",
+        "background": "#0f172a",
+        "surface": "#1e293b",
+        "text": "#e2e8f0",
+        "muted": "#64748b"
+      }
+    },
+    "typography": {
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "15px"
+    },
+    "customizable": true
+  },
+  "defaultStyles": {
+    "primaryColor": "#818cf8",
+    "fontFamily": "Inter",
+    "borderRadius": "12px"
+  }
+}
+```
+
+## Example 4: Embeddable Widget
+
+Add the Agentbase chat widget to any website:
+
+```html
+<script src="https://your-agentbase.com/widget.js"></script>
+<script>
+  AgentbaseWidget.init({
+    appId: "your-app-id",
+    apiKey: "agb_your_api_key",
+    theme: "dark",
+    position: "bottom-right",
+  });
+</script>
+```
+
+## Example 5: Knowledge Base with RAG
+
+Upload documents and use retrieval-augmented generation:
+
+```bash
+# Upload a document
+POST /api/knowledge
+Content-Type: multipart/form-data
+file: @manual.pdf
+applicationId: <app-id>
+
+# The document is automatically:
+# 1. Parsed and chunked
+# 2. Embedded into vectors
+# 3. Stored for semantic search
+
+# Now conversations automatically use RAG
+POST /api/conversations/<conv-id>/messages
+{
+  "content": "What does the manual say about installation?"
+}
+# Response includes relevant context from the uploaded document
+```

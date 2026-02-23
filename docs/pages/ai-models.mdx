@@ -1,0 +1,121 @@
+# AI Models
+
+Agentbase supports multiple AI providers out of the box. Configure and manage models through the dashboard or API.
+
+## Supported Providers
+
+### OpenAI
+
+Models: GPT-4, GPT-4 Turbo, GPT-3.5 Turbo
+
+```bash
+# Set your API key
+OPENAI_API_KEY=sk-...
+```
+
+### Anthropic
+
+Models: Claude 3 Opus, Claude 3 Sonnet, Claude 3 Haiku
+
+```bash
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+### Google Gemini
+
+Models: Gemini Pro, Gemini Pro Vision
+
+```bash
+GEMINI_API_KEY=AI...
+```
+
+### HuggingFace
+
+Access thousands of open-source models via HuggingFace Inference API.
+
+```bash
+HUGGINGFACE_API_KEY=hf_...
+```
+
+## Configuration
+
+### Via Dashboard
+
+1. Navigate to **Dashboard → AI Models**
+2. Select your application
+3. Click **+ Add Model**
+4. Choose provider and model
+5. Configure temperature, max tokens, and system prompt
+6. Save
+
+### Via API
+
+```bash
+# Create a model configuration
+POST /api/model-configs
+{
+  "applicationId": "app-uuid",
+  "provider": "openai",
+  "modelId": "gpt-4",
+  "displayName": "GPT-4 Production",
+  "isDefault": true,
+  "settings": {
+    "temperature": 0.7,
+    "maxTokens": 2048,
+    "topP": 1,
+    "systemPrompt": "You are a helpful assistant."
+  }
+}
+```
+
+## Model Settings
+
+| Setting            | Description                      | Range         |
+| ------------------ | -------------------------------- | ------------- |
+| `temperature`      | Controls randomness              | 0.0 - 2.0     |
+| `maxTokens`        | Maximum response length          | 1 - model max |
+| `topP`             | Nucleus sampling threshold       | 0.0 - 1.0     |
+| `frequencyPenalty` | Reduces repetition               | -2.0 - 2.0    |
+| `presencePenalty`  | Encourages topic diversity       | -2.0 - 2.0    |
+| `systemPrompt`     | System instruction for the model | text          |
+
+## A/B Testing
+
+Model configurations support versioning for A/B testing:
+
+1. Create multiple versions of a model config
+2. Assign traffic percentages to each version
+3. Monitor metrics (latency, token usage, error rate)
+4. Promote the winning version
+
+```bash
+# Get config versions
+GET /api/model-configs/:id/versions
+
+# Create a new version
+POST /api/model-configs/:id/versions
+{
+  "label": "Higher temperature variant",
+  "settings": { "temperature": 0.9 },
+  "trafficPercent": 20
+}
+```
+
+## Provider Abstraction
+
+The AI service uses an abstraction layer so switching providers is seamless:
+
+```python
+# The provider registry handles initialization
+registry = ProviderRegistry()
+registry.initialize(
+    openai_key="sk-...",
+    anthropic_key="sk-ant-...",
+    gemini_key="AI...",
+    huggingface_key="hf_..."
+)
+
+# Get a provider
+provider = registry.get_provider("openai")
+response = await provider.generate("Hello!", model="gpt-4")
+```

@@ -1,0 +1,330 @@
+# Model Configs API
+
+The Model Configs API manages AI model configurations for applications, including provider settings, parameter tuning, and A/B testing with version traffic splitting.
+
+---
+
+## Model Configurations
+
+### List Model Configs
+
+```
+GET /model-configs?applicationId=:appId
+```
+
+**Auth Required:** Yes (JWT)
+
+Returns all model configurations for an application.
+
+**Query Parameters:**
+
+| Parameter       | Type   | Required | Description      |
+| --------------- | ------ | -------- | ---------------- |
+| `applicationId` | string | Yes      | Application UUID |
+
+**Response:**
+
+```json
+[
+  {
+    "_id": "64a1b2c3...",
+    "applicationId": "uuid",
+    "name": "GPT-4 Production",
+    "provider": "openai",
+    "modelId": "gpt-4",
+    "isDefault": true,
+    "settings": {
+      "temperature": 0.7,
+      "maxTokens": 2048,
+      "topP": 1.0,
+      "systemPrompt": "You are a helpful assistant."
+    },
+    "createdAt": "2025-01-15T10:00:00Z",
+    "updatedAt": "2025-01-20T14:30:00Z"
+  }
+]
+```
+
+### Create Model Config
+
+```
+POST /model-configs
+```
+
+**Auth Required:** Yes (JWT)
+
+**Request Body:**
+
+```json
+{
+  "applicationId": "uuid",
+  "name": "Claude Sonnet",
+  "provider": "anthropic",
+  "modelId": "claude-sonnet-4-20250514",
+  "isDefault": false,
+  "settings": {
+    "temperature": 0.5,
+    "maxTokens": 4096,
+    "topP": 0.9,
+    "systemPrompt": "You are a knowledgeable AI assistant."
+  }
+}
+```
+
+**Supported Providers:**
+
+| Provider      | Example Model IDs                                     |
+| ------------- | ----------------------------------------------------- |
+| `openai`      | `gpt-4`, `gpt-4-turbo`, `gpt-3.5-turbo`               |
+| `anthropic`   | `claude-sonnet-4-20250514`, `claude-3-haiku-20240307` |
+| `gemini`      | `gemini-pro`, `gemini-1.5-pro`                        |
+| `huggingface` | `mistralai/Mistral-7B-Instruct-v0.2`, any HF model    |
+
+### Get Model Config
+
+```
+GET /model-configs/:id
+```
+
+**Auth Required:** Yes (JWT)
+
+Returns a single model configuration by its ID.
+
+### Update Model Config
+
+```
+PUT /model-configs/:id
+```
+
+**Auth Required:** Yes (JWT)
+
+**Request Body:** Same fields as create (all optional for partial update).
+
+```json
+{
+  "settings": {
+    "temperature": 0.8,
+    "maxTokens": 3000
+  }
+}
+```
+
+### Delete Model Config
+
+```
+DELETE /model-configs/:id
+```
+
+**Auth Required:** Yes (JWT)
+
+Deletes a model configuration. Cannot delete the default model config unless another is set as default first.
+
+### Set Default Model
+
+```
+PATCH /model-configs/:id/default
+```
+
+**Auth Required:** Yes (JWT)
+
+Sets this model config as the default for its application. Unsets any previously default config.
+
+---
+
+## Model Config Versions (A/B Testing)
+
+Model config versions allow you to run multiple versions of a model configuration simultaneously, splitting traffic between them to compare performance.
+
+### List Versions
+
+```
+GET /model-configs/:configId/versions
+```
+
+**Auth Required:** Yes (JWT)
+
+Returns all versions for a model configuration.
+
+**Response:**
+
+```json
+[
+  {
+    "_id": "64a1b2c3...",
+    "configId": "64a1b2c3...",
+    "applicationId": "uuid",
+    "version": "v1",
+    "label": "Default GPT-4",
+    "provider": "openai",
+    "modelId": "gpt-4",
+    "settings": {
+      "temperature": 0.7,
+      "maxTokens": 2048
+    },
+    "trafficPercent": 70,
+    "isActive": true,
+    "metrics": {
+      "requestCount": 1500,
+      "avgLatencyMs": 1200,
+      "avgTokensUsed": 850,
+      "errorRate": 0.02,
+      "userSatisfactionScore": 4.3
+    }
+  },
+  {
+    "_id": "64a1b2c4...",
+    "configId": "64a1b2c3...",
+    "applicationId": "uuid",
+    "version": "v2",
+    "label": "GPT-4 Turbo Test",
+    "provider": "openai",
+    "modelId": "gpt-4-turbo",
+    "settings": {
+      "temperature": 0.5,
+      "maxTokens": 4096
+    },
+    "trafficPercent": 30,
+    "isActive": true,
+    "metrics": {
+      "requestCount": 650,
+      "avgLatencyMs": 800,
+      "avgTokensUsed": 920,
+      "errorRate": 0.01,
+      "userSatisfactionScore": 4.6
+    }
+  }
+]
+```
+
+### Create Version
+
+```
+POST /model-configs/:configId/versions
+```
+
+**Auth Required:** Yes (JWT)
+
+Create a new A/B test version. Traffic percentages across all active versions should sum to 100.
+
+**Request Body:**
+
+```json
+{
+  "applicationId": "uuid",
+  "version": "v2",
+  "label": "GPT-4 Turbo Test",
+  "provider": "openai",
+  "modelId": "gpt-4-turbo",
+  "settings": {
+    "temperature": 0.5,
+    "maxTokens": 4096
+  },
+  "trafficPercent": 30,
+  "isActive": true
+}
+```
+
+### Update Version
+
+```
+PUT /model-configs/:configId/versions/:versionId
+```
+
+**Auth Required:** Yes (JWT)
+
+Update version settings or traffic allocation.
+
+```json
+{
+  "trafficPercent": 50,
+  "settings": {
+    "temperature": 0.6
+  }
+}
+```
+
+### Delete Version
+
+```
+DELETE /model-configs/:configId/versions/:versionId
+```
+
+**Auth Required:** Yes (JWT)
+
+Removes a version. Remaining versions' traffic should be redistributed.
+
+---
+
+## Settings Reference
+
+### Common Settings
+
+| Setting        | Type   | Range      | Default | Description                       |
+| -------------- | ------ | ---------- | ------- | --------------------------------- |
+| `temperature`  | number | 0.0 – 2.0  | 0.7     | Controls randomness of output     |
+| `maxTokens`    | number | 1 – 128000 | 2048    | Maximum tokens in response        |
+| `topP`         | number | 0.0 – 1.0  | 1.0     | Nucleus sampling threshold        |
+| `systemPrompt` | string | —          | —       | System message sent with requests |
+
+### Provider-Specific Notes
+
+**OpenAI:**
+
+- Supports `gpt-4`, `gpt-4-turbo`, `gpt-3.5-turbo` and newer models
+- Max tokens varies by model (8K for GPT-4, 128K for GPT-4 Turbo)
+- Supports streaming responses
+
+**Anthropic:**
+
+- Supports Claude 3.5, Claude 3, and newer models
+- Max output tokens: 4096 (Claude 3), 8192 (Claude 3.5)
+- System prompt is sent as a separate parameter
+
+**Google Gemini:**
+
+- Supports `gemini-pro`, `gemini-1.5-pro`, `gemini-1.5-flash`
+- Max output tokens varies by model
+- Temperature range: 0.0 – 1.0
+
+**HuggingFace:**
+
+- Supports any model available via the Inference API
+- Use full model ID (e.g., `mistralai/Mistral-7B-Instruct-v0.2`)
+- Rate limits depend on your HuggingFace plan
+
+---
+
+## Metrics Object
+
+The `metrics` object in model config versions tracks performance for A/B testing:
+
+| Field                   | Type   | Description                       |
+| ----------------------- | ------ | --------------------------------- |
+| `requestCount`          | number | Total inference requests          |
+| `avgLatencyMs`          | number | Average response time in ms       |
+| `avgTokensUsed`         | number | Average tokens per request        |
+| `errorRate`             | number | Fraction of failed requests (0–1) |
+| `userSatisfactionScore` | number | Average user rating (1–5)         |
+
+Metrics are automatically tracked when using the conversation API with a versioned model config.
+
+---
+
+## Error Responses
+
+```json
+{
+  "statusCode": 404,
+  "message": "Model config not found",
+  "error": "Not Found"
+}
+```
+
+| Code | Description                        |
+| ---- | ---------------------------------- |
+| 200  | Success                            |
+| 201  | Created                            |
+| 400  | Bad Request (invalid settings)     |
+| 401  | Unauthorized                       |
+| 404  | Not Found                          |
+| 409  | Conflict (duplicate version label) |

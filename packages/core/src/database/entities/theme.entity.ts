@@ -4,11 +4,11 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-} from 'typeorm';
+} from "typeorm";
 
-@Entity('themes')
+@Entity("themes")
 export class Theme {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
   @Column({ unique: true })
@@ -27,9 +27,21 @@ export class Theme {
   author: string;
 
   @Column({ nullable: true })
+  authorUrl: string;
+
+  @Column({ nullable: true })
   previewUrl: string;
 
-  @Column({ type: 'jsonb', default: {} })
+  @Column({ nullable: true })
+  iconUrl: string;
+
+  @Column({ type: "simple-array", nullable: true })
+  screenshots: string[];
+
+  @Column({ nullable: true })
+  category: string;
+
+  @Column({ type: "jsonb", default: {} })
   manifest: {
     layouts?: string[];
     colorSchemes?: Record<string, any>;
@@ -38,7 +50,7 @@ export class Theme {
     customizable?: boolean;
   };
 
-  @Column({ type: 'jsonb', default: {} })
+  @Column({ type: "jsonb", default: {} })
   defaultStyles: {
     primaryColor?: string;
     secondaryColor?: string;
@@ -54,8 +66,14 @@ export class Theme {
   @Column({ default: false })
   isPaid: boolean;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  @Column({ type: "decimal", precision: 10, scale: 2, nullable: true })
   price: number;
+
+  @Column({ type: "float", default: 0 })
+  rating: number;
+
+  @Column({ default: 0 })
+  downloadCount: number;
 
   @CreateDateColumn()
   createdAt: Date;

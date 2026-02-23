@@ -249,6 +249,112 @@ class GeminiProvider(AIProvider):
                 yield chunk.text
 
 
+class HuggingFaceProvider(AIProvider):
+    """HuggingFace Inference API provider."""
+
+    def __init__(self, api_key: str):
+        import httpx
+        self._api_key = api_key
+        self._client = httpx.AsyncClient(
+            base_url="https://api-inference.huggingface.co",
+            headers={"Authorization": f"Bearer {api_key}"},
+            timeout=120.0,
+        )
+
+    @property
+    def name(self) -> str:
+        return "huggingface"
+
+    @property
+    def available_models(self) -> list[str]:
+        return [
+            "meta-llama/Llama-3.1-8B-Instruct",
+            "mistralai/Mistral-7B-Instruct-v0.3",
+            "mistralai/Mixtral-8x7B-Instruct-v0.1",
+            "microsoft/Phi-3-mini-4k-instruct",
+            "HuggingFaceH4/zephyr-7b-beta",
+        ]
+
+    def _build_prompt(self, messages: list[ChatMessage]) -> str:
+        """Convert ChatMessages to a text prompt for HuggingFace models."""
+        parts = []
+        for m in messages:
+            if m.role == "system":
+                parts.append(f"<|system|>\n{m.content}</s>")
+            elif m.role == "user":
+                parts.append(f"<|user|>\n{m.content}</s>")
+            elif m.role == "assistant":
+                parts.append(f"<|assistant|>\n{m.content}</s>")
+        parts.append("<|assistant|>\n")
+        return "\n".join(parts)
+
+    async def chat(self, request: ChatRequest) -> ChatResponse:
+        model = request.model or "mistralai/Mistral-7B-Instruct-v0.3"
+        prompt = self._build_prompt(request.messages)
+
+        payload = {
+            "inputs": prompt,
+            "parameters": {
+                "max_new_tokens": request.max_tokens,
+                "temperature": request.temperature,
+                "return_full_text": False,
+            },
+        }
+
+        response = await self._client.post(
+            f"/models/{model}",
+            json=payload,
+        )
+        response.raise_for_status()
+        data = response.json()
+
+        # HuggingFace returns a list of generated texts
+        content = ""
+        if isinstance(data, list) and len(data) > 0:
+            content = data[0].get("generated_text", "")
+        elif isinstance(data, dict):
+            content = data.get("generated_text", "")
+
+        return ChatResponse(
+            content=content.strip(),
+            model=model,
+            provider=self.name,
+            usage={},
+        )
+
+    async def chat_stream(self, request: ChatRequest) -> AsyncGenerator[str, None]:
+        model = request.model or "mistralai/Mistral-7B-Instruct-v0.3"
+        prompt = self._build_prompt(request.messages)
+
+        payload = {
+            "inputs": prompt,
+            "parameters": {
+                "max_new_tokens": request.max_tokens,
+                "temperature": request.temperature,
+                "return_full_text": False,
+            },
+            "stream": True,
+        }
+
+        async with self._client.stream(
+            "POST",
+            f"/models/{model}",
+            json=payload,
+        ) as response:
+            response.raise_for_status()
+            buffer = ""
+            async for line in response.aiter_lines():
+                if line.startswith("data:"):
+                    import json
+                    try:
+                        chunk_data = json.loads(line[5:].strip())
+                        token = chunk_data.get("token", {}).get("text", "")
+                        if token:
+                            yield token
+                    except (json.JSONDecodeError, KeyError):
+                        continue
+
+
 class ProviderRegistry:
     """Registry of available AI providers."""
 
@@ -275,6 +381,7 @@ class ProviderRegistry:
         openai_key: str = None,
         anthropic_key: str = None,
         gemini_key: str = None,
+        huggingface_key: str = None,
     ):
         if openai_key:
             cls.register(OpenAIProvider(openai_key))
@@ -282,3 +389,5 @@ class ProviderRegistry:
             cls.register(AnthropicProvider(anthropic_key))
         if gemini_key:
             cls.register(GeminiProvider(gemini_key))
+        if huggingface_key:
+            cls.register(HuggingFaceProvider(huggingface_key))

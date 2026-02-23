@@ -304,3 +304,86 @@ class TestGeminiProvider:
         assert contents[1]["role"] == "model"  # assistant -> model
         assert contents[2]["role"] == "user"
 
+
+# ─── HuggingFace Provider ──────────────────────────────────
+
+class TestHuggingFaceProvider:
+    @pytest.mark.asyncio
+    async def test_chat_returns_response(self):
+        from app.services.ai_providers import HuggingFaceProvider
+
+        provider = HuggingFaceProvider.__new__(HuggingFaceProvider)
+        provider._api_key = "test-key"
+
+        # Mock httpx client
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.raise_for_status = MagicMock()
+        mock_response.json.return_value = [{"generated_text": "Hello from HuggingFace!"}]
+
+        mock_client = MagicMock()
+        mock_client.post = AsyncMock(return_value=mock_response)
+        provider._client = mock_client
+
+        request = ChatRequest(
+            messages=[ChatMessage(role="user", content="Hi")],
+            model="mistralai/Mistral-7B-Instruct-v0.3",
+        )
+        result = await provider.chat(request)
+
+        assert result.content == "Hello from HuggingFace!"
+        assert result.provider == "huggingface"
+        assert result.model == "mistralai/Mistral-7B-Instruct-v0.3"
+        assert result.usage == {}
+
+    @pytest.mark.asyncio
+    async def test_chat_dict_response_format(self):
+        from app.services.ai_providers import HuggingFaceProvider
+
+        provider = HuggingFaceProvider.__new__(HuggingFaceProvider)
+        provider._api_key = "test-key"
+
+        mock_response = MagicMock()
+        mock_response.raise_for_status = MagicMock()
+        mock_response.json.return_value = {"generated_text": "Dict response"}
+
+        mock_client = MagicMock()
+        mock_client.post = AsyncMock(return_value=mock_response)
+        provider._client = mock_client
+
+        request = ChatRequest(messages=[ChatMessage(role="user", content="Hi")])
+        result = await provider.chat(request)
+
+        assert result.content == "Dict response"
+
+    def test_name(self):
+        from app.services.ai_providers import HuggingFaceProvider
+
+        provider = HuggingFaceProvider.__new__(HuggingFaceProvider)
+        assert provider.name == "huggingface"
+
+    def test_available_models(self):
+        from app.services.ai_providers import HuggingFaceProvider
+
+        provider = HuggingFaceProvider.__new__(HuggingFaceProvider)
+        models = provider.available_models
+        assert "meta-llama/Llama-3.1-8B-Instruct" in models
+        assert "mistralai/Mistral-7B-Instruct-v0.3" in models
+
+    def test_build_prompt(self):
+        from app.services.ai_providers import HuggingFaceProvider
+
+        provider = HuggingFaceProvider.__new__(HuggingFaceProvider)
+        messages = [
+            ChatMessage(role="system", content="Be helpful"),
+            ChatMessage(role="user", content="Hi"),
+            ChatMessage(role="assistant", content="Hello!"),
+            ChatMessage(role="user", content="How are you?"),
+        ]
+        prompt = provider._build_prompt(messages)
+
+        assert "<|system|>" in prompt
+        assert "Be helpful" in prompt
+        assert "<|user|>" in prompt
+        assert "<|assistant|>" in prompt
+        assert prompt.endswith("<|assistant|>\n")

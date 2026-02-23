@@ -1,0 +1,96 @@
+# Publishing to Marketplace
+
+Share your plugin with the Agentbase community by publishing it to the marketplace.
+
+## Prepare Your Plugin
+
+1. **Test thoroughly** — ensure your plugin works correctly
+2. **Add screenshots** — marketplace listings with screenshots get more installs
+3. **Write a good description** — explain what your plugin does and how to use it
+4. **Choose a category** — helps users find your plugin
+
+## Submit via Dashboard
+
+1. Go to **Dashboard → Marketplace**
+2. Click **Submit Plugin**
+3. Fill in the submission form:
+   - Plugin name and slug
+   - Version
+   - Description
+   - Author information
+   - Icon and screenshots
+   - Category
+   - Pricing (free or paid)
+4. Submit for review
+
+## Submit via API
+
+```bash
+POST /api/marketplace/submit/plugin
+Authorization: Bearer <token>
+{
+  "name": "My Plugin",
+  "slug": "my-plugin",
+  "version": "1.0.0",
+  "description": "A great plugin for Agentbase",
+  "author": "Your Name",
+  "authorUrl": "https://yoursite.com",
+  "repositoryUrl": "https://github.com/you/my-plugin",
+  "iconUrl": "https://yoursite.com/icon.png",
+  "screenshots": [
+    "https://yoursite.com/screenshot1.png",
+    "https://yoursite.com/screenshot2.png"
+  ],
+  "isPaid": false
+}
+```
+
+## Review Process
+
+1. **Submitted** — your plugin enters the review queue
+2. **Under Review** — an admin reviews your plugin
+3. **Approved** → published to the marketplace
+4. **Rejected** → you'll get feedback on what to fix
+
+## Versioning
+
+After your plugin is approved, publish new versions:
+
+```bash
+POST /api/marketplace/plugins/:id/versions
+{
+  "version": "1.1.0",
+  "changelog": "Added new feature X, fixed bug Y",
+  "compatibility": {
+    "minPlatformVersion": "0.1.0"
+  }
+}
+```
+
+Users will see version history and changelogs on the marketplace listing.
+
+## Pricing
+
+You can list plugins as:
+
+- **Free** — available to everyone
+- **Paid** — set your price, Agentbase handles payment processing
+
+Revenue sharing details are available in the developer portal.
+
+## Publishing Themes
+
+Themes follow the same process:
+
+```bash
+POST /api/marketplace/submit/theme
+Authorization: Bearer <token>
+{
+  "name": "My Theme",
+  "slug": "my-theme",
+  "version": "1.0.0",
+  "description": "A beautiful theme",
+  "category": "business",
+  "previewUrl": "https://preview.example.com"
+}
+```

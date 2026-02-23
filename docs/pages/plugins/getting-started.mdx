@@ -1,0 +1,113 @@
+# Plugin Getting Started
+
+Build your first Agentbase plugin in 5 minutes.
+
+## Prerequisites
+
+- Node.js 18+
+- An Agentbase instance running locally
+
+## Create a New Plugin
+
+```bash
+mkdir my-first-plugin
+cd my-first-plugin
+npm init -y
+npm install @agentbase/plugin-sdk
+```
+
+## Write the Plugin
+
+Create `src/index.ts`:
+
+```typescript
+import { createPlugin } from "@agentbase/plugin-sdk";
+
+export default createPlugin({
+  name: "my-first-plugin",
+  version: "1.0.0",
+  description: "My first Agentbase plugin",
+  author: "Your Name",
+
+  // Hook into platform events
+  hooks: {
+    "app:init": async (context) => {
+      context.api.log("My plugin is running!");
+    },
+    "conversation:start": async (context, conversationId) => {
+      context.api.log(`New conversation started: ${conversationId}`);
+    },
+  },
+
+  // Transform data with filters
+  filters: {
+    "prompt:modify": async (context, prompt) => {
+      // Add a prefix to all prompts
+      return `[Enhanced] ${prompt}`;
+    },
+  },
+
+  // Plugin settings UI
+  settings: {
+    greeting: {
+      type: "string",
+      label: "Custom Greeting",
+      default: "Hello from my plugin!",
+    },
+    enabled: {
+      type: "boolean",
+      label: "Enable enhanced responses",
+      default: true,
+    },
+  },
+
+  onActivate: async (context) => {
+    context.api.log("Plugin activated!");
+  },
+
+  onDeactivate: async (context) => {
+    context.api.log("Plugin deactivated!");
+  },
+});
+```
+
+## Available Hooks
+
+### Actions (fire-and-forget)
+
+| Hook                 | Description              | Arguments      |
+| -------------------- | ------------------------ | -------------- |
+| `app:init`           | Application initialized  | —              |
+| `app:request`        | Incoming API request     | request object |
+| `conversation:start` | New conversation created | conversationId |
+| `conversation:end`   | Conversation completed   | conversationId |
+| `plugin:activate`    | Plugin activated         | pluginId       |
+| `plugin:deactivate`  | Plugin deactivated       | pluginId       |
+| `user:login`         | User logged in           | userId         |
+| `user:register`      | New user registered      | userId         |
+
+### Filters (transform values)
+
+| Filter                 | Description                      | Value           |
+| ---------------------- | -------------------------------- | --------------- |
+| `prompt:modify`        | Modify the prompt before sending | prompt string   |
+| `response:modify`      | Modify the AI response           | response string |
+| `message:beforeSend`   | Before message is sent to AI     | message object  |
+| `message:afterReceive` | After receiving AI response      | message object  |
+| `config:modify`        | Modify application config        | config object   |
+| `theme:modify`         | Modify theme settings            | theme object    |
+
+## Test Your Plugin
+
+Install the plugin through the Agentbase dashboard:
+
+1. Go to **Dashboard → My Plugins**
+2. Click **Upload Plugin**
+3. Select your built plugin bundle
+4. Activate it on an application
+
+## Next Steps
+
+- Learn about [Advanced Capabilities](/plugins/advanced) (database, custom endpoints, cron jobs)
+- [Publish to Marketplace](/plugins/publishing)
+- See the full [SDK Reference](/plugins/sdk-reference)

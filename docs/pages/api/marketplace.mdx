@@ -1,0 +1,480 @@
+# Marketplace API
+
+The Marketplace API provides endpoints for browsing, reviewing, submitting, and managing plugins and themes.
+
+All marketplace endpoints are prefixed with `/marketplace`.
+
+---
+
+## Plugin Marketplace
+
+### Browse Plugins
+
+```
+GET /marketplace/plugins/browse
+```
+
+Returns a paginated list of published plugins.
+
+**Query Parameters:**
+
+| Parameter  | Type   | Default | Description                |
+| ---------- | ------ | ------- | -------------------------- |
+| `page`     | number | 1       | Page number                |
+| `limit`    | number | 20      | Items per page             |
+| `search`   | string | —       | Search by name/description |
+| `category` | string | —       | Filter by category         |
+| `sortBy`   | string | `name`  | Sort field                 |
+
+**Response:**
+
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "name": "my-plugin",
+      "displayName": "My Plugin",
+      "description": "A useful plugin",
+      "version": "1.0.0",
+      "author": "developer",
+      "category": "ai",
+      "downloadCount": 1500,
+      "averageRating": 4.5,
+      "ratingCount": 23,
+      "isActive": true
+    }
+  ],
+  "total": 42,
+  "page": 1,
+  "limit": 20
+}
+```
+
+### Get Featured Plugins
+
+```
+GET /marketplace/plugins/featured
+```
+
+Returns plugins marked as featured by administrators.
+
+**Response:** Array of plugin objects.
+
+### Get Plugin Categories
+
+```
+GET /marketplace/plugins/categories
+```
+
+Returns a list of all unique plugin categories.
+
+**Response:**
+
+```json
+["ai", "analytics", "communication", "content", "security", "utilities"]
+```
+
+### Get Plugin Detail
+
+```
+GET /marketplace/plugins/:id
+```
+
+Returns full details for a single plugin, including rating statistics.
+
+**Response:**
+
+```json
+{
+  "id": "uuid",
+  "name": "my-plugin",
+  "displayName": "My Plugin",
+  "description": "A useful plugin",
+  "version": "1.0.0",
+  "author": "developer",
+  "category": "ai",
+  "downloadCount": 1500,
+  "averageRating": 4.5,
+  "ratingCount": 23,
+  "isActive": true,
+  "homepage": "https://example.com",
+  "repository": "https://github.com/example/my-plugin",
+  "ratingStats": {
+    "averageRating": 4.5,
+    "totalReviews": 23,
+    "distribution": { "1": 0, "2": 1, "3": 2, "4": 5, "5": 15 }
+  }
+}
+```
+
+---
+
+## Plugin Reviews
+
+### Get Plugin Reviews
+
+```
+GET /marketplace/plugins/:id/reviews
+```
+
+Returns all reviews for a plugin.
+
+**Response:** Array of review objects:
+
+```json
+[
+  {
+    "pluginId": "uuid",
+    "userId": "uuid",
+    "rating": 5,
+    "title": "Excellent plugin",
+    "comment": "Works great!",
+    "createdAt": "2025-01-15T10:00:00Z"
+  }
+]
+```
+
+### Submit Plugin Review
+
+```
+POST /marketplace/plugins/:id/reviews
+```
+
+**Auth Required:** Yes (JWT)
+
+**Request Body:**
+
+```json
+{
+  "rating": 5,
+  "title": "Excellent plugin",
+  "comment": "Works great for my use case."
+}
+```
+
+### Delete Plugin Review
+
+```
+DELETE /marketplace/plugins/:id/reviews/:reviewId
+```
+
+**Auth Required:** Yes (JWT) — must be review author or admin.
+
+---
+
+## Plugin Versioning
+
+### Get Plugin Versions
+
+```
+GET /marketplace/plugins/:id/versions
+```
+
+Returns all published versions for a plugin, sorted by release date descending.
+
+**Response:**
+
+```json
+[
+  {
+    "pluginId": "uuid",
+    "version": "1.2.0",
+    "changelog": "Added new AI features",
+    "compatibility": ">=0.5.0",
+    "downloadUrl": "https://cdn.agentbase.dev/plugins/my-plugin/1.2.0.tgz",
+    "fileSize": 45000,
+    "checksum": "sha256:abc123...",
+    "publishedBy": "uuid",
+    "releasedAt": "2025-02-01T12:00:00Z"
+  }
+]
+```
+
+### Get Specific Version
+
+```
+GET /marketplace/plugins/:id/versions/:version
+```
+
+Returns details for a specific plugin version.
+
+### Publish Plugin Version
+
+```
+POST /marketplace/plugins/:id/versions
+```
+
+**Auth Required:** Yes (JWT)
+
+**Request Body:**
+
+```json
+{
+  "version": "1.2.0",
+  "changelog": "Added new AI features",
+  "compatibility": ">=0.5.0",
+  "downloadUrl": "https://cdn.agentbase.dev/plugins/my-plugin/1.2.0.tgz",
+  "fileSize": 45000,
+  "checksum": "sha256:abc123..."
+}
+```
+
+---
+
+## Theme Marketplace
+
+### Browse Themes
+
+```
+GET /marketplace/themes/browse
+```
+
+Returns a paginated list of published themes.
+
+**Query Parameters:**
+
+| Parameter  | Type   | Default | Description                |
+| ---------- | ------ | ------- | -------------------------- |
+| `page`     | number | 1       | Page number                |
+| `limit`    | number | 20      | Items per page             |
+| `search`   | string | —       | Search by name/description |
+| `category` | string | —       | Filter by category         |
+
+**Response:**
+
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "name": "modern-dark",
+      "displayName": "Modern Dark",
+      "description": "A sleek dark theme",
+      "version": "1.0.0",
+      "author": "designer",
+      "category": "dark",
+      "downloadCount": 3200,
+      "averageRating": 4.8,
+      "ratingCount": 48,
+      "previewUrl": "https://cdn.agentbase.dev/themes/modern-dark/preview.png"
+    }
+  ],
+  "total": 15,
+  "page": 1,
+  "limit": 20
+}
+```
+
+### Get Featured Themes
+
+```
+GET /marketplace/themes/featured
+```
+
+Returns themes marked as featured by administrators.
+
+### Get Theme Categories
+
+```
+GET /marketplace/themes/categories
+```
+
+Returns all unique theme categories.
+
+### Get Theme Detail
+
+```
+GET /marketplace/themes/:id
+```
+
+Returns full details for a single theme, including rating statistics.
+
+---
+
+## Theme Reviews
+
+### Get Theme Reviews
+
+```
+GET /marketplace/themes/:id/reviews
+```
+
+### Submit Theme Review
+
+```
+POST /marketplace/themes/:id/reviews
+```
+
+**Auth Required:** Yes (JWT)
+
+**Request Body:**
+
+```json
+{
+  "rating": 5,
+  "title": "Beautiful theme",
+  "comment": "Love the design!"
+}
+```
+
+### Delete Theme Review
+
+```
+DELETE /marketplace/themes/:id/reviews/:reviewId
+```
+
+**Auth Required:** Yes (JWT) — must be review author or admin.
+
+---
+
+## Developer Submission
+
+### Submit Plugin
+
+```
+POST /marketplace/submit/plugin
+```
+
+**Auth Required:** Yes (JWT)
+
+Submit a new plugin for marketplace review. The plugin is created in `DRAFT` status.
+
+**Request Body:**
+
+```json
+{
+  "name": "my-plugin",
+  "displayName": "My Plugin",
+  "description": "A useful AI plugin",
+  "version": "1.0.0",
+  "author": "your-username",
+  "category": "ai",
+  "homepage": "https://example.com",
+  "repository": "https://github.com/example/my-plugin"
+}
+```
+
+### Submit Theme
+
+```
+POST /marketplace/submit/theme
+```
+
+**Auth Required:** Yes (JWT)
+
+Submit a new theme for marketplace review. The theme is created in `DRAFT` status.
+
+**Request Body:**
+
+```json
+{
+  "name": "my-theme",
+  "displayName": "My Theme",
+  "description": "A beautiful responsive theme",
+  "version": "1.0.0",
+  "author": "your-username",
+  "category": "modern",
+  "previewUrl": "https://cdn.example.com/preview.png"
+}
+```
+
+---
+
+## Admin Approval
+
+All admin endpoints require the `admin` role.
+
+### Get Pending Plugins
+
+```
+GET /marketplace/admin/plugins/pending
+```
+
+**Auth Required:** Yes (JWT + Admin role)
+
+Returns all plugins awaiting approval (inactive status).
+
+### Approve Plugin
+
+```
+POST /marketplace/admin/plugins/:id/approve
+```
+
+**Auth Required:** Yes (JWT + Admin role)
+
+Sets the plugin to active/published status.
+
+### Reject Plugin
+
+```
+POST /marketplace/admin/plugins/:id/reject
+```
+
+**Auth Required:** Yes (JWT + Admin role)
+
+**Request Body:**
+
+```json
+{
+  "reason": "Plugin does not meet quality guidelines."
+}
+```
+
+### Get Pending Themes
+
+```
+GET /marketplace/admin/themes/pending
+```
+
+**Auth Required:** Yes (JWT + Admin role)
+
+### Approve Theme
+
+```
+POST /marketplace/admin/themes/:id/approve
+```
+
+**Auth Required:** Yes (JWT + Admin role)
+
+### Reject Theme
+
+```
+POST /marketplace/admin/themes/:id/reject
+```
+
+**Auth Required:** Yes (JWT + Admin role)
+
+**Request Body:**
+
+```json
+{
+  "reason": "Theme preview image is missing."
+}
+```
+
+---
+
+## Error Responses
+
+All marketplace endpoints return standard error responses:
+
+```json
+{
+  "statusCode": 404,
+  "message": "Plugin not found",
+  "error": "Not Found"
+}
+```
+
+Common status codes:
+
+| Code | Description                    |
+| ---- | ------------------------------ |
+| 200  | Success                        |
+| 201  | Created (submit, publish)      |
+| 400  | Bad Request (validation error) |
+| 401  | Unauthorized (missing JWT)     |
+| 403  | Forbidden (insufficient role)  |
+| 404  | Not Found                      |
+| 409  | Conflict (duplicate version)   |

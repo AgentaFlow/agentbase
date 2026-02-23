@@ -1,7 +1,11 @@
 {
   "index": "Introduction",
   "getting-started": "Getting Started",
+  "self-hosting": "Self-Hosting Guide",
   "plugins": "Plugins",
   "themes": "Themes",
-  "api": "API Reference"
+  "ai-models": "AI Models",
+  "api": "API Reference",
+  "marketplace": "Marketplace",
+  "examples": "Examples"
 }

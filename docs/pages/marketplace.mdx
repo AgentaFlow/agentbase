@@ -1,0 +1,108 @@
+# Marketplace
+
+The Agentbase Marketplace is where developers share and discover plugins and themes.
+
+## Browsing
+
+### Plugins
+
+```bash
+# Browse all plugins
+GET /api/marketplace/browse?sort=popular&page=1&limit=20
+
+# Search
+GET /api/marketplace/browse?search=chat+bot
+
+# Filter by category
+GET /api/marketplace/browse?category=ai-tools
+
+# Featured plugins
+GET /api/marketplace/featured
+
+# Categories
+GET /api/marketplace/categories
+```
+
+### Themes
+
+```bash
+# Browse themes
+GET /api/marketplace/themes?sort=popular
+
+# Search themes
+GET /api/marketplace/themes?search=dark
+
+# Filter by category
+GET /api/marketplace/themes?category=dashboard
+
+# Featured themes
+GET /api/marketplace/themes/featured
+
+# Theme categories
+GET /api/marketplace/themes/categories
+```
+
+## Plugin Detail
+
+```bash
+GET /api/marketplace/plugins/:id
+```
+
+Returns plugin metadata, rating statistics, and recent reviews.
+
+## Reviews
+
+### Read Reviews
+
+```bash
+GET /api/marketplace/plugins/:id/reviews?limit=20&skip=0
+GET /api/marketplace/themes/:id/reviews?limit=20&skip=0
+```
+
+### Submit a Review
+
+```bash
+POST /api/marketplace/plugins/:id/reviews
+Authorization: Bearer <token>
+{
+  "rating": 5,
+  "review": "Great plugin, works perfectly!"
+}
+```
+
+Reviews are upserted — one review per user per plugin. Submitting again updates your existing review.
+
+### Delete Your Review
+
+```bash
+DELETE /api/marketplace/plugins/:id/reviews
+Authorization: Bearer <token>
+```
+
+## Categories
+
+### Plugin Categories
+
+| Slug           | Name             |
+| -------------- | ---------------- |
+| `chat`         | Chat & Messaging |
+| `analytics`    | Analytics        |
+| `integrations` | Integrations     |
+| `security`     | Security         |
+| `ai-tools`     | AI Tools         |
+| `productivity` | Productivity     |
+| `ecommerce`    | E-Commerce       |
+| `content`      | Content          |
+
+### Theme Categories
+
+| Slug        | Name         |
+| ----------- | ------------ |
+| `business`  | Business     |
+| `portfolio` | Portfolio    |
+| `blog`      | Blog         |
+| `ecommerce` | E-Commerce   |
+| `landing`   | Landing Page |
+| `dashboard` | Dashboard    |
+| `minimal`   | Minimal      |
+| `creative`  | Creative     |

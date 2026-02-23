@@ -10,6 +10,7 @@ import NotificationBell from "@/components/notifications/notification-bell";
 const navItems = [
   { href: "/dashboard", label: "Overview", icon: "🏠" },
   { href: "/dashboard/applications", label: "Applications", icon: "🚀" },
+  { href: "/dashboard/models", label: "AI Models", icon: "🤖" },
   { href: "/dashboard/knowledge", label: "Knowledge", icon: "📚" },
   { href: "/dashboard/marketplace", label: "Marketplace", icon: "🛒" },
   { href: "/dashboard/analytics", label: "Analytics", icon: "📊" },

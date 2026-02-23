@@ -20,6 +20,7 @@ ProviderRegistry.initialize(
     openai_key=settings.OPENAI_API_KEY,
     anthropic_key=settings.ANTHROPIC_API_KEY,
     gemini_key=settings.GEMINI_API_KEY,
+    huggingface_key=settings.HUGGINGFACE_API_KEY,
 )
 
 

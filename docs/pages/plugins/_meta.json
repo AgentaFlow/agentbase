@@ -1,3 +1,7 @@
 {
-  "overview": "Overview"
+  "overview": "Overview",
+  "getting-started": "Getting Started",
+  "sdk-reference": "SDK Reference",
+  "advanced": "Advanced Capabilities",
+  "publishing": "Publishing to Marketplace"
 }

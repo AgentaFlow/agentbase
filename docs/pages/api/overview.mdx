@@ -25,20 +25,22 @@ Authorization: Bearer eyJ...
 
 ## Core Endpoints
 
-| Resource          | Endpoints                                                                     |
-| ----------------- | ----------------------------------------------------------------------------- |
-| **Auth**          | `POST /auth/register`, `POST /auth/login`, `POST /auth/refresh`               |
-| **Users**         | `GET /users/me`, `PUT /users/me`                                              |
-| **Applications**  | `GET /applications`, `POST /applications`, `GET/PUT/DELETE /applications/:id` |
-| **Plugins**       | `GET /plugins`, `GET /plugins/:id`, install/activate/deactivate per app       |
-| **Themes**        | `GET /themes`, `GET /themes/:id`, set/customize per app                       |
-| **Conversations** | `GET /conversations`, `POST /conversations`, send messages, stream            |
-| **Marketplace**   | `GET /marketplace/browse`, `GET /marketplace/featured`                        |
-| **API Keys**      | `GET /api-keys`, `POST /api-keys`, `DELETE /api-keys/:id`                     |
-| **Teams**         | `GET /teams`, `POST /teams`, invite/remove members                            |
-| **Webhooks**      | `GET /webhooks`, `POST /webhooks`, `DELETE /webhooks/:id`                     |
-| **Templates**     | `GET /templates`, `POST /templates/:id/deploy`                                |
-| **Knowledge**     | `POST /knowledge`, upload documents, search                                   |
+| Resource             | Endpoints                                                                     |
+| -------------------- | ----------------------------------------------------------------------------- |
+| **Auth**             | `POST /auth/register`, `POST /auth/login`, `POST /auth/refresh`               |
+| **Users**            | `GET /users/me`, `PUT /users/me`                                              |
+| **Applications**     | `GET /applications`, `POST /applications`, `GET/PUT/DELETE /applications/:id` |
+| **Plugins**          | `GET /plugins`, `GET /plugins/:id`, install/activate/deactivate per app       |
+| **Themes**           | `GET /themes`, `GET /themes/:id`, set/customize per app                       |
+| **Conversations**    | `GET /conversations`, `POST /conversations`, send messages, stream            |
+| **Marketplace**      | browse, featured, reviews, submit, admin approval (plugins + themes)          |
+| **Model Configs**    | `GET /model-configs`, `POST /model-configs`, versioning, A/B test             |
+| **API Keys**         | `GET /api-keys`, `POST /api-keys`, `DELETE /api-keys/:id`                     |
+| **Teams**            | `GET /teams`, `POST /teams`, invite/remove members                            |
+| **Webhooks**         | `GET /webhooks`, `POST /webhooks`, `DELETE /webhooks/:id`                     |
+| **Templates**        | `GET /templates`, `POST /templates/:id/deploy`                                |
+| **Knowledge**        | `POST /knowledge`, upload documents, search                                   |
+| **Plugin Endpoints** | `ALL /plugins/:pluginId/endpoints/*` (dynamic plugin routes)                  |
 
 ## Public API (Widget)
 

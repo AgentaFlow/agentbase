@@ -3,16 +3,16 @@ import {
   NotFoundException,
   ConflictException,
   Logger,
-} from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+} from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
 import {
   InstalledPlugin,
   InstalledPluginStatus,
   Plugin,
   Application,
-} from '../../database/entities';
-import { HookEngine } from '../hooks/hook.engine';
+} from "../../database/entities";
+import { HookEngine } from "../hooks/hook.engine";
 
 @Injectable()
 export class InstalledPluginsService {
@@ -34,18 +34,23 @@ export class InstalledPluginsService {
     ownerId: string,
   ): Promise<InstalledPlugin> {
     // Verify app ownership
-    const app = await this.appRepo.findOne({ where: { id: applicationId, ownerId } });
-    if (!app) throw new NotFoundException('Application not found');
+    const app = await this.appRepo.findOne({
+      where: { id: applicationId, ownerId },
+    });
+    if (!app) throw new NotFoundException("Application not found");
 
     // Verify plugin exists
     const plugin = await this.pluginRepo.findOne({ where: { id: pluginId } });
-    if (!plugin) throw new NotFoundException('Plugin not found');
+    if (!plugin) throw new NotFoundException("Plugin not found");
 
     // Check if already installed
     const existing = await this.installedRepo.findOne({
       where: { applicationId, pluginId },
     });
-    if (existing) throw new ConflictException('Plugin already installed on this application');
+    if (existing)
+      throw new ConflictException(
+        "Plugin already installed on this application",
+      );
 
     const installed = this.installedRepo.create({
       applicationId,
@@ -56,8 +61,11 @@ export class InstalledPluginsService {
 
     const result = await this.installedRepo.save(installed);
 
+    // Increment download count
+    await this.pluginRepo.increment({ id: pluginId }, "downloadCount", 1);
+
     // Fire activation hook
-    await this.hookEngine.doAction('plugin:activate', {
+    await this.hookEngine.doAction("plugin:activate", {
       applicationId,
       pluginId,
     });
@@ -71,16 +79,18 @@ export class InstalledPluginsService {
     pluginId: string,
     ownerId: string,
   ): Promise<void> {
-    const app = await this.appRepo.findOne({ where: { id: applicationId, ownerId } });
-    if (!app) throw new NotFoundException('Application not found');
+    const app = await this.appRepo.findOne({
+      where: { id: applicationId, ownerId },
+    });
+    if (!app) throw new NotFoundException("Application not found");
 
     const installed = await this.installedRepo.findOne({
       where: { applicationId, pluginId },
     });
-    if (!installed) throw new NotFoundException('Plugin not installed');
+    if (!installed) throw new NotFoundException("Plugin not installed");
 
     // Fire deactivation hook
-    await this.hookEngine.doAction('plugin:deactivate', {
+    await this.hookEngine.doAction("plugin:deactivate", {
       applicationId,
       pluginId,
     });
@@ -101,7 +111,7 @@ export class InstalledPluginsService {
     installed.status = InstalledPluginStatus.ACTIVE;
     const result = await this.installedRepo.save(installed);
 
-    await this.hookEngine.doAction('plugin:activate', {
+    await this.hookEngine.doAction("plugin:activate", {
       applicationId,
       pluginId,
     });
@@ -118,7 +128,7 @@ export class InstalledPluginsService {
     installed.status = InstalledPluginStatus.INACTIVE;
     const result = await this.installedRepo.save(installed);
 
-    await this.hookEngine.doAction('plugin:deactivate', {
+    await this.hookEngine.doAction("plugin:deactivate", {
       applicationId,
       pluginId,
     });
@@ -142,21 +152,23 @@ export class InstalledPluginsService {
     applicationId: string,
     ownerId: string,
   ): Promise<InstalledPlugin[]> {
-    const app = await this.appRepo.findOne({ where: { id: applicationId, ownerId } });
-    if (!app) throw new NotFoundException('Application not found');
+    const app = await this.appRepo.findOne({
+      where: { id: applicationId, ownerId },
+    });
+    if (!app) throw new NotFoundException("Application not found");
 
     return this.installedRepo.find({
       where: { applicationId },
-      relations: ['plugin'],
-      order: { executionOrder: 'ASC' },
+      relations: ["plugin"],
+      order: { executionOrder: "ASC" },
     });
   }
 
   async getActivePlugins(applicationId: string): Promise<InstalledPlugin[]> {
     return this.installedRepo.find({
       where: { applicationId, status: InstalledPluginStatus.ACTIVE },
-      relations: ['plugin'],
-      order: { executionOrder: 'ASC' },
+      relations: ["plugin"],
+      order: { executionOrder: "ASC" },
     });
   }
 
@@ -165,13 +177,15 @@ export class InstalledPluginsService {
     pluginId: string,
     ownerId: string,
   ): Promise<InstalledPlugin> {
-    const app = await this.appRepo.findOne({ where: { id: applicationId, ownerId } });
-    if (!app) throw new NotFoundException('Application not found');
+    const app = await this.appRepo.findOne({
+      where: { id: applicationId, ownerId },
+    });
+    if (!app) throw new NotFoundException("Application not found");
 
     const installed = await this.installedRepo.findOne({
       where: { applicationId, pluginId },
     });
-    if (!installed) throw new NotFoundException('Plugin not installed');
+    if (!installed) throw new NotFoundException("Plugin not installed");
 
     return installed;
   }

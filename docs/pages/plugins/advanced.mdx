@@ -1,0 +1,189 @@
+# Advanced Plugin Capabilities
+
+Beyond basic hooks and filters, plugins can access databases, register custom endpoints,
+schedule jobs, communicate with other plugins, and handle webhooks.
+
+## Database Access
+
+Plugins have a scoped key-value store — each plugin's data is isolated.
+
+```typescript
+const plugin = createPlugin({
+  name: "data-plugin",
+  version: "1.0.0",
+  hooks: {
+    "conversation:end": async (context, conversationId) => {
+      // Store data
+      await context.api.db.set("last-conversation", conversationId);
+
+      // Retrieve data
+      const last = await context.api.db.get("last-conversation");
+
+      // Store structured data
+      await context.api.db.set(`conversations:${conversationId}`, {
+        endedAt: new Date(),
+        userId: context.userId,
+      });
+
+      // Query data
+      const recent = await context.api.db.find(
+        { userId: context.userId },
+        { limit: 10, sort: { endedAt: -1 } },
+      );
+
+      // List keys
+      const keys = await context.api.db.keys("conversations:");
+
+      // Count
+      const count = await context.api.db.count({ userId: context.userId });
+
+      // Delete
+      await context.api.db.delete("temporary-key");
+    },
+  },
+});
+```
+
+## Custom API Endpoints
+
+Register custom HTTP endpoints that are accessible at `/api/plugins/:pluginId/endpoints/*`.
+
+```typescript
+const plugin = createPlugin({
+  name: "analytics-plugin",
+  version: "1.0.0",
+  endpoints: [
+    {
+      method: "GET",
+      path: "/stats",
+      description: "Get plugin analytics stats",
+      auth: true,
+      handler: async (req, res) => {
+        const stats = await fetchStats(req.user.id);
+        res.json({ stats });
+      },
+    },
+    {
+      method: "POST",
+      path: "/track",
+      handler: async (req, res) => {
+        await trackEvent(req.body);
+        res.status(201).json({ tracked: true });
+      },
+    },
+  ],
+});
+```
+
+Access the endpoints:
+
+```bash
+GET /api/plugins/analytics-plugin/endpoints/stats
+POST /api/plugins/analytics-plugin/endpoints/track
+```
+
+## Scheduled Jobs (Cron)
+
+Register periodic tasks that run on a schedule.
+
+```typescript
+const plugin = createPlugin({
+  name: "cleanup-plugin",
+  version: "1.0.0",
+  cronJobs: [
+    {
+      name: "daily-cleanup",
+      schedule: "0 2 * * *", // 2 AM daily (cron format)
+      handler: async (context) => {
+        context.api.log("Running daily cleanup...");
+        // Perform cleanup tasks
+      },
+      timezone: "America/New_York",
+    },
+    {
+      name: "hourly-sync",
+      schedule: "1h", // Shorthand: every hour
+      handler: async (context) => {
+        // Sync data
+      },
+    },
+  ],
+});
+```
+
+Supported schedule formats:
+
+- **Cron**: `*/5 * * * *` (every 5 minutes), `0 * * * *` (every hour)
+- **Shorthand**: `30s`, `5m`, `1h`, `1d`
+
+## Inter-Plugin Communication
+
+Plugins can communicate via an event bus:
+
+```typescript
+// Plugin A: Emit events
+const pluginA = createPlugin({
+  name: "data-source",
+  version: "1.0.0",
+  hooks: {
+    "conversation:end": async (context) => {
+      await context.api.events.emit("data-source:conversation-ended", {
+        appId: context.appId,
+        timestamp: Date.now(),
+      });
+    },
+  },
+});
+
+// Plugin B: Listen for events
+const pluginB = createPlugin({
+  name: "data-consumer",
+  version: "1.0.0",
+  onActivate: async (context) => {
+    context.api.events.on("data-source:conversation-ended", async (data) => {
+      context.api.log(`Conversation ended in app ${data.appId}`);
+    });
+  },
+});
+```
+
+## Webhook Handlers
+
+Register handlers for incoming webhook events:
+
+```typescript
+const plugin = createPlugin({
+  name: "github-integration",
+  version: "1.0.0",
+  webhooks: [
+    {
+      name: "github-events",
+      events: ["push", "pull_request", "issues"],
+      handler: async (context, event, payload) => {
+        context.api.log(`Received GitHub ${event} event`);
+        // Process webhook payload
+      },
+    },
+  ],
+});
+```
+
+## Admin UI Extensions
+
+Register custom pages in the admin dashboard:
+
+```typescript
+const plugin = createPlugin({
+  name: "admin-extension",
+  version: "1.0.0",
+  adminPages: [
+    {
+      path: "/admin-extension/dashboard",
+      title: "Extension Dashboard",
+      icon: "chart-bar",
+      component: "ExtensionDashboard",
+      group: "plugins",
+    },
+  ],
+});
+```
