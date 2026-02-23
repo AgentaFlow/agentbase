@@ -15,9 +15,11 @@ agentbase/
 │   ├── core/              # NestJS API (PostgreSQL + MongoDB)
 │   ├── frontend/          # Next.js 14 (App Router + Tailwind)
 │   ├── ai-service/        # FastAPI (AI provider integrations + SSE streaming)
+│   ├── installer/         # Self-hosted CLI installer (Commander + Inquirer)
 │   ├── shared/            # Shared TypeScript types
 │   ├── plugins/           # Plugin SDK + examples
 │   └── themes/            # Theme SDK + starter themes
+├── docs/                  # Documentation site (Nextra)
 ├── docker-compose.yml     # Local dev databases
 ├── docker-compose.prod.yml # Production stack
 └── .env.example           # Environment template
@@ -80,11 +82,26 @@ pnpm dev:frontend   # Next.js frontend only
 pnpm dev:ai         # FastAPI AI service only
 ```
 
+### Self-Hosted Installation
+
+For production self-hosted deployments, use the CLI installer:
+
+```bash
+cd packages/installer
+pnpm install
+npx ts-node src/cli.ts check     # Verify system requirements
+npx ts-node src/cli.ts install   # Interactive installation wizard
+npx ts-node src/cli.ts status    # Check service status
+npx ts-node src/cli.ts update    # Update to latest version
+```
+
 ## Features
 
 ### 🤖 AI Integration
 
-- **Multi-Provider Support** — OpenAI (GPT-4, GPT-4o, GPT-3.5), Anthropic (Claude), Google Gemini (2.0 Flash, 1.5 Pro, 1.5 Flash)
+- **Multi-Provider Support** — OpenAI (GPT-4, GPT-4o, GPT-3.5), Anthropic (Claude), Google Gemini (2.0 Flash, 1.5 Pro, 1.5 Flash), HuggingFace (Inference API)
+- **Model Configuration Dashboard** — Per-app model configs with provider selection, parameter tuning (temperature, max tokens, top-p), and system prompts
+- **A/B Testing** — Model config versioning with traffic splitting and performance metrics tracking
 - **Streaming Responses** — Server-Sent Events (SSE) for real-time token-by-token output
 - **Conversation Management** — Create, continue, archive conversations per application
 - **Prompt Templates** — Reusable templates with `{{variable}}` substitution
@@ -94,8 +111,12 @@ pnpm dev:ai         # FastAPI AI service only
 
 - **WordPress-Style Hooks** — Actions and filters with priority-based execution
 - **Plugin SDK** — TypeScript interfaces and utilities for plugin development
+- **Advanced Capabilities** — Database access (scoped key-value store), custom API endpoints, cron scheduling, webhooks, admin UI extensions, inter-plugin event bus
 - **Lifecycle Management** — Install, activate, deactivate, uninstall with dependency resolution
-- **Marketplace** — Browse, search, rate, and review plugins with 8 categories
+- **Marketplace** — Browse, search, rate, and review plugins and themes with 8 categories
+- **Plugin Versioning** — Multiple versions per plugin with changelogs, compatibility checks, and checksums
+- **Developer Portal** — Submit plugins/themes for marketplace review, admin approval workflow
+- **Download Tracking** — Automatic install/download counters
 - **Per-App Installation** — Install and configure plugins independently per application
 
 ### 🎨 Themes & Customization
@@ -134,13 +155,24 @@ pnpm dev:ai         # FastAPI AI service only
 - **System Health** — Real-time service checks (PostgreSQL, MongoDB, Redis, AI Service)
 - **Platform Statistics** — Users, applications, subscriptions, resource usage
 
-### 🚀 Deployment
+### 🚀 Deployment & Self-Hosting
 
+- **Self-Hosted Installer CLI** — Interactive installation wizard (`agentbase install`) with system requirements checking, database setup, admin account creation, and `.env` generation
+- **Update Mechanism** — `agentbase update` with automatic backups, migration running, and dependency updates
+- **System Status** — `agentbase status` shows version, service health, and Docker container status
 - **Docker Production Stack** — Multi-stage builds with Alpine images, health checks, non-root user
 - **Nginx Reverse Proxy** — SSL termination, rate limiting, security headers, SSE streaming
 - **Email Service** — SMTP transport with HTML templates (welcome, password reset, usage warnings)
 - **File Uploads** — S3-compatible storage (AWS S3, MinIO, DigitalOcean Spaces, Cloudflare R2)
 - **Automated Backups** — PostgreSQL and MongoDB backup scripts with 7-day retention
+
+### 📖 Documentation
+
+- **Self-Hosting Guide** — Complete installation and configuration instructions
+- **Plugin Development** — Getting started, SDK reference, advanced capabilities, publishing guide
+- **AI Models Guide** — Provider configuration, model settings, A/B testing
+- **API Reference** — Full marketplace and model configs API documentation
+- **Examples Gallery** — AI chatbot, plugin with database, custom theme, embeddable widget, RAG pipeline
 
 ## API Endpoints
 
@@ -174,6 +206,42 @@ pnpm dev:ai         # FastAPI AI service only
 - `PUT /api/applications/:appId/plugins/:id/activate` — Activate plugin
 - `PUT /api/applications/:appId/plugins/:id/deactivate` — Deactivate plugin
 - `DELETE /api/applications/:appId/plugins/:id` — Uninstall plugin
+- `ALL /api/plugins/:pluginId/endpoints/*` — Dynamic plugin custom endpoints
+
+### Marketplace
+
+- `GET /api/marketplace/plugins/browse` — Browse plugins
+- `GET /api/marketplace/plugins/featured` — Featured plugins
+- `GET /api/marketplace/plugins/categories` — Plugin categories
+- `GET /api/marketplace/plugins/:id` — Plugin detail with rating stats
+- `GET /api/marketplace/plugins/:id/reviews` — Plugin reviews
+- `POST /api/marketplace/plugins/:id/reviews` — Submit review
+- `GET /api/marketplace/plugins/:id/versions` — Plugin versions
+- `POST /api/marketplace/plugins/:id/versions` — Publish new version
+- `GET /api/marketplace/themes/browse` — Browse themes
+- `GET /api/marketplace/themes/featured` — Featured themes
+- `GET /api/marketplace/themes/:id` — Theme detail
+- `GET /api/marketplace/themes/:id/reviews` — Theme reviews
+- `POST /api/marketplace/themes/:id/reviews` — Submit theme review
+- `POST /api/marketplace/submit/plugin` — Developer: submit plugin
+- `POST /api/marketplace/submit/theme` — Developer: submit theme
+- `GET /api/marketplace/admin/plugins/pending` — Admin: pending plugins
+- `POST /api/marketplace/admin/plugins/:id/approve` — Admin: approve plugin
+- `POST /api/marketplace/admin/plugins/:id/reject` — Admin: reject plugin
+- `GET /api/marketplace/admin/themes/pending` — Admin: pending themes
+- `POST /api/marketplace/admin/themes/:id/approve` — Admin: approve theme
+- `POST /api/marketplace/admin/themes/:id/reject` — Admin: reject theme
+
+### Model Configs
+
+- `GET /api/model-configs?applicationId=` — List model configs
+- `POST /api/model-configs` — Create model config
+- `GET /api/model-configs/:id` — Get model config
+- `PUT /api/model-configs/:id` — Update model config
+- `DELETE /api/model-configs/:id` — Delete model config
+- `PATCH /api/model-configs/:id/default` — Set default model
+- `GET /api/model-configs/:id/versions` — List A/B test versions
+- `POST /api/model-configs/:id/versions` — Create A/B test version
 
 ### Prompt Templates
 
@@ -189,6 +257,8 @@ pnpm dev:ai         # FastAPI AI service only
 
 - `GET /api/themes` — List themes
 - `POST /api/themes` — Create theme
+- `PUT /api/applications/:id/theme` — Set application theme
+- `PUT /api/applications/:id/theme/customize` — Customize theme
 
 ### AI Service
 
@@ -206,6 +276,7 @@ Agentbase supports multiple AI providers out of the box:
 - **OpenAI** — GPT-4, GPT-4o, GPT-3.5 Turbo
 - **Anthropic** — Claude Sonnet 4.5, Claude Haiku 4.5
 - **Google Gemini** — Gemini 2.0 Flash, Gemini 1.5 Pro, Gemini 1.5 Flash
+- **HuggingFace** — Any model via the Inference API (Mistral, Llama, Falcon, etc.)
 
 Set your API keys in `.env` and Agentbase handles provider routing, rate limiting, and conversation management automatically.
 
