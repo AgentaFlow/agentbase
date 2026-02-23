@@ -7,6 +7,18 @@ Agentbase is an open-source platform that brings the WordPress model to AI devel
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![pnpm](https://img.shields.io/badge/maintained%20with-pnpm-cc00ff.svg)](https://pnpm.io/)
 
+## Screenshots
+
+<p align="center">
+  <img src="docs/images/homepage.png" alt="Agentbase Homepage" width="720" />
+</p>
+<p align="center"><em>Homepage — The main landing page of a running Agentbase instance</em></p>
+
+<p align="center">
+  <img src="docs/images/usertest.png" alt="Agentbase User Testing" width="720" />
+</p>
+<p align="center"><em>Application Dashboard — Managing AI applications, plugins, and configurations</em></p>
+
 ## Architecture
 
 ```
