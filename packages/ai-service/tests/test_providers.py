@@ -197,3 +197,110 @@ class TestAnthropicProvider:
         models = provider.available_models
         assert "claude-sonnet-4-5-20250929" in models
 
+
+# ─── Gemini Provider ───────────────────────────────────────
+
+class TestGeminiProvider:
+    @pytest.mark.asyncio
+    async def test_chat_returns_response(self):
+        from app.services.ai_providers import GeminiProvider
+
+        provider = GeminiProvider.__new__(GeminiProvider)
+
+        # Mock the genai module and GenerativeModel
+        mock_genai = MagicMock()
+        provider._genai = mock_genai
+
+        # Mock usage metadata
+        mock_usage = MagicMock()
+        mock_usage.prompt_token_count = 12
+        mock_usage.candidates_token_count = 8
+
+        # Mock response
+        mock_response = MagicMock()
+        mock_response.text = "Hello from Gemini!"
+        mock_response.usage_metadata = mock_usage
+
+        # Mock model
+        mock_model = MagicMock()
+        mock_model.generate_content_async = AsyncMock(return_value=mock_response)
+        mock_genai.GenerativeModel.return_value = mock_model
+        mock_genai.GenerationConfig.return_value = {}
+
+        request = ChatRequest(
+            messages=[
+                ChatMessage(role="system", content="Be helpful"),
+                ChatMessage(role="user", content="Hi"),
+            ],
+        )
+        result = await provider.chat(request)
+
+        assert result.content == "Hello from Gemini!"
+        assert result.provider == "gemini"
+        assert result.model == "gemini-2.0-flash"
+        assert result.usage["prompt_tokens"] == 12
+        assert result.usage["completion_tokens"] == 8
+        assert result.usage["total_tokens"] == 20
+
+    @pytest.mark.asyncio
+    async def test_chat_without_system_message(self):
+        from app.services.ai_providers import GeminiProvider
+
+        provider = GeminiProvider.__new__(GeminiProvider)
+
+        mock_genai = MagicMock()
+        provider._genai = mock_genai
+
+        mock_response = MagicMock()
+        mock_response.text = "Hi there!"
+        mock_response.usage_metadata = None
+
+        mock_model = MagicMock()
+        mock_model.generate_content_async = AsyncMock(return_value=mock_response)
+        mock_genai.GenerativeModel.return_value = mock_model
+        mock_genai.GenerationConfig.return_value = {}
+
+        request = ChatRequest(
+            messages=[ChatMessage(role="user", content="Hello")],
+        )
+        result = await provider.chat(request)
+
+        assert result.content == "Hi there!"
+        assert result.usage == {}
+        # Should NOT pass system_instruction when no system message
+        call_kwargs = mock_genai.GenerativeModel.call_args
+        assert "system_instruction" not in call_kwargs.kwargs
+
+    def test_name(self):
+        from app.services.ai_providers import GeminiProvider
+
+        provider = GeminiProvider.__new__(GeminiProvider)
+        assert provider.name == "gemini"
+
+    def test_available_models(self):
+        from app.services.ai_providers import GeminiProvider
+
+        provider = GeminiProvider.__new__(GeminiProvider)
+        models = provider.available_models
+        assert "gemini-2.0-flash" in models
+        assert "gemini-1.5-pro" in models
+        assert "gemini-1.5-flash" in models
+
+    def test_build_contents_role_mapping(self):
+        from app.services.ai_providers import GeminiProvider
+
+        provider = GeminiProvider.__new__(GeminiProvider)
+        messages = [
+            ChatMessage(role="system", content="System prompt"),
+            ChatMessage(role="user", content="Hi"),
+            ChatMessage(role="assistant", content="Hello!"),
+            ChatMessage(role="user", content="How are you?"),
+        ]
+        contents, system_instruction = provider._build_contents(messages)
+
+        assert system_instruction == "System prompt"
+        assert len(contents) == 3
+        assert contents[0]["role"] == "user"
+        assert contents[1]["role"] == "model"  # assistant -> model
+        assert contents[2]["role"] == "user"
+

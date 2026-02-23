@@ -159,6 +159,96 @@ class AnthropicProvider(AIProvider):
                 yield text
 
 
+class GeminiProvider(AIProvider):
+    """Google Gemini provider."""
+
+    def __init__(self, api_key: str):
+        import google.generativeai as genai
+        self._genai = genai
+        genai.configure(api_key=api_key)
+
+    @property
+    def name(self) -> str:
+        return "gemini"
+
+    @property
+    def available_models(self) -> list[str]:
+        return ["gemini-2.0-flash", "gemini-1.5-pro", "gemini-1.5-flash"]
+
+    def _build_contents(self, messages: list[ChatMessage]) -> tuple[list[dict], str]:
+        """Convert ChatMessages to Gemini format, extracting system instruction."""
+        system_instruction = ""
+        contents = []
+        for m in messages:
+            if m.role == "system":
+                system_instruction = m.content
+            else:
+                # Gemini uses "model" instead of "assistant"
+                role = "model" if m.role == "assistant" else "user"
+                contents.append({"role": role, "parts": [{"text": m.content}]})
+        return contents, system_instruction
+
+    async def chat(self, request: ChatRequest) -> ChatResponse:
+        model_name = request.model or "gemini-2.0-flash"
+        contents, system_instruction = self._build_contents(request.messages)
+
+        model_kwargs = {}
+        if system_instruction:
+            model_kwargs["system_instruction"] = system_instruction
+
+        model = self._genai.GenerativeModel(
+            model_name=model_name,
+            **model_kwargs,
+            generation_config=self._genai.GenerationConfig(
+                temperature=request.temperature,
+                max_output_tokens=request.max_tokens,
+            ),
+        )
+
+        response = await model.generate_content_async(contents)
+
+        # Extract usage metadata
+        usage = {}
+        if hasattr(response, "usage_metadata") and response.usage_metadata:
+            um = response.usage_metadata
+            prompt_tokens = getattr(um, "prompt_token_count", 0) or 0
+            completion_tokens = getattr(um, "candidates_token_count", 0) or 0
+            usage = {
+                "prompt_tokens": prompt_tokens,
+                "completion_tokens": completion_tokens,
+                "total_tokens": prompt_tokens + completion_tokens,
+            }
+
+        return ChatResponse(
+            content=response.text,
+            model=model_name,
+            provider=self.name,
+            usage=usage,
+        )
+
+    async def chat_stream(self, request: ChatRequest) -> AsyncGenerator[str, None]:
+        model_name = request.model or "gemini-2.0-flash"
+        contents, system_instruction = self._build_contents(request.messages)
+
+        model_kwargs = {}
+        if system_instruction:
+            model_kwargs["system_instruction"] = system_instruction
+
+        model = self._genai.GenerativeModel(
+            model_name=model_name,
+            **model_kwargs,
+            generation_config=self._genai.GenerationConfig(
+                temperature=request.temperature,
+                max_output_tokens=request.max_tokens,
+            ),
+        )
+
+        response = await model.generate_content_async(contents, stream=True)
+        async for chunk in response:
+            if chunk.text:
+                yield chunk.text
+
+
 class ProviderRegistry:
     """Registry of available AI providers."""
 
