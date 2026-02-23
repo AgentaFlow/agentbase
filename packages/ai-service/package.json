@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "cd packages/ai-service && uvicorn app.main:app --reload --port 8000",
-    "start": "cd packages/ai-service && uvicorn app.main:app --port 8000",
-    "test": "cd packages/ai-service && python -m pytest tests/ -v"
+    "dev": "python -m uvicorn app.main:app --reload --port 8000",
+    "start": "python -m uvicorn app.main:app --port 8000",
+    "test": "python -m pytest tests/ -v"
   }
 }
