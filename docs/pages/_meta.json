@@ -5,7 +5,7 @@
   "plugins": "Plugins",
   "themes": "Themes",
   "ai-models": "AI Models",
-  "api": "API Reference",
+  "api-reference": "API Reference",
   "marketplace": "Marketplace",
   "examples": "Examples"
 }
