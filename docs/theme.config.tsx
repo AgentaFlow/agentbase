@@ -8,7 +8,19 @@ const config: DocsThemeConfig = {
   },
   docsRepositoryBase: "https://github.com/AgentaFlow/agentbase/tree/main/docs",
   footer: {
-    text: "© Agentbase — WordPress for AI Applications",
+    text: (
+      <span>
+        © Agentbase — Easily Publish Your AI Applications, produced by{" "}
+        <a
+          href="https://www.agentaflow.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ textDecoration: "underline" }}
+        >
+          AgentaFlow
+        </a>
+      </span>
+    ),
   },
   useNextSeoProps() {
     return { titleTemplate: "%s – Agentbase Docs" };
