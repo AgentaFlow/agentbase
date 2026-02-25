@@ -12,9 +12,17 @@ export default function Home() {
           <span className="text-xl font-bold text-slate-900">Agentbase</span>
         </div>
         <div className="flex items-center gap-4">
+          <a
+            href="https://agentaflow.github.io/agentbase"
+            className="text-slate-600 hover:text-slate-900 font-medium"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Docs
+          </a>
           <Link
             href="/login"
-            className="text-slate-600 hover:text-slate-900 font-medium"
+            className="border border-brand-600 text-brand-600 px-4 py-2 rounded-lg hover:bg-brand-50 font-medium"
           >
             Sign In
           </Link>
