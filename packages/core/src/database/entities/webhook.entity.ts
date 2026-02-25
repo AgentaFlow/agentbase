@@ -6,27 +6,28 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
-} from 'typeorm';
-import { User } from './user.entity';
-import { Application } from './application.entity';
+} from "typeorm";
+import { User } from "./user.entity";
+import { Application } from "./application.entity";
+import { Team } from "./team.entity";
 
-@Entity('webhooks')
+@Entity("webhooks")
 export class Webhook {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @Column({ type: 'uuid' })
+  @Column({ type: "uuid" })
   ownerId: string;
 
-  @ManyToOne(() => User, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'ownerId' })
+  @ManyToOne(() => User, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "ownerId" })
   owner: User;
 
-  @Column({ type: 'uuid', nullable: true })
+  @Column({ type: "uuid", nullable: true })
   applicationId: string;
 
-  @ManyToOne(() => Application, { onDelete: 'CASCADE', nullable: true })
-  @JoinColumn({ name: 'applicationId' })
+  @ManyToOne(() => Application, { onDelete: "CASCADE", nullable: true })
+  @JoinColumn({ name: "applicationId" })
   application: Application;
 
   @Column({ length: 200 })
@@ -39,22 +40,32 @@ export class Webhook {
   @Column({ nullable: true })
   secret: string;
 
-  @Column({ type: 'simple-array', default: 'message.sent,conversation.started' })
+  @Column({
+    type: "simple-array",
+    default: "message.sent,conversation.started",
+  })
   events: string[];
+
+  @ManyToOne(() => Team, { nullable: true, onDelete: "SET NULL" })
+  @JoinColumn({ name: "teamId" })
+  team: Team;
+
+  @Column({ type: "uuid", nullable: true })
+  teamId: string;
 
   @Column({ default: true })
   isActive: boolean;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: "timestamp", nullable: true })
   lastTriggeredAt: Date;
 
-  @Column({ type: 'int', default: 0 })
+  @Column({ type: "int", default: 0 })
   totalDeliveries: number;
 
-  @Column({ type: 'int', default: 0 })
+  @Column({ type: "int", default: 0 })
   failedDeliveries: number;
 
-  @Column({ nullable: true, type: 'varchar' })
+  @Column({ nullable: true, type: "varchar" })
   lastError: string | null;
 
   @CreateDateColumn()

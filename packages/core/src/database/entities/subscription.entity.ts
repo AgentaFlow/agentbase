@@ -6,40 +6,52 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
-} from 'typeorm';
-import { User } from './user.entity';
+} from "typeorm";
+import { User } from "./user.entity";
+import { Team } from "./team.entity";
 
 export enum PlanTier {
-  FREE = 'free',
-  STARTER = 'starter',
-  PRO = 'pro',
-  ENTERPRISE = 'enterprise',
+  FREE = "free",
+  STARTER = "starter",
+  PRO = "pro",
+  ENTERPRISE = "enterprise",
 }
 
 export enum SubscriptionStatus {
-  ACTIVE = 'active',
-  PAST_DUE = 'past_due',
-  CANCELED = 'canceled',
-  TRIALING = 'trialing',
-  INCOMPLETE = 'incomplete',
+  ACTIVE = "active",
+  PAST_DUE = "past_due",
+  CANCELED = "canceled",
+  TRIALING = "trialing",
+  INCOMPLETE = "incomplete",
 }
 
-@Entity('subscriptions')
+@Entity("subscriptions")
 export class Subscription {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @Column({ type: 'uuid' })
+  @Column({ type: "uuid" })
   userId: string;
 
-  @ManyToOne(() => User, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'userId' })
+  @ManyToOne(() => User, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "userId" })
   user: User;
 
-  @Column({ type: 'enum', enum: PlanTier, default: PlanTier.FREE })
+  @Column({ type: "uuid", nullable: true })
+  teamId: string;
+
+  @ManyToOne(() => Team, { nullable: true, onDelete: "SET NULL" })
+  @JoinColumn({ name: "teamId" })
+  team: Team;
+
+  @Column({ type: "enum", enum: PlanTier, default: PlanTier.FREE })
   plan: PlanTier;
 
-  @Column({ type: 'enum', enum: SubscriptionStatus, default: SubscriptionStatus.ACTIVE })
+  @Column({
+    type: "enum",
+    enum: SubscriptionStatus,
+    default: SubscriptionStatus.ACTIVE,
+  })
   status: SubscriptionStatus;
 
   /** Stripe customer ID */
@@ -55,35 +67,38 @@ export class Subscription {
   stripePriceId: string;
 
   // --- Usage limits per billing cycle ---
-  @Column({ type: 'int', default: 10000 })
+  @Column({ type: "int", default: 10000 })
   tokenLimit: number;
 
-  @Column({ type: 'bigint', default: 0 })
+  @Column({ type: "bigint", default: 0 })
   tokensUsed: number;
 
-  @Column({ type: 'int', default: 3 })
+  @Column({ type: "int", default: 3 })
   appLimit: number;
 
-  @Column({ type: 'int', default: 1000 })
+  @Column({ type: "int", default: 1000 })
   messagesLimit: number;
 
-  @Column({ type: 'int', default: 0 })
+  @Column({ type: "int", default: 0 })
   messagesUsed: number;
 
-  @Column({ type: 'int', default: 2 })
+  @Column({ type: "int", default: 2 })
   apiKeyLimit: number;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: "timestamp", nullable: true })
   currentPeriodStart: Date;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: "timestamp", nullable: true })
   currentPeriodEnd: Date;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: "timestamp", nullable: true })
   trialEnd: Date;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: "timestamp", nullable: true })
   canceledAt: Date;
+
+  @Column({ type: "int", default: 0 })
+  failedPaymentCount: number;
 
   @CreateDateColumn()
   createdAt: Date;

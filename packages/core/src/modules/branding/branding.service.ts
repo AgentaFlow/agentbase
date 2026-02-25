@@ -1,8 +1,8 @@
-import { Injectable, Logger, ForbiddenException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Branding } from '../../database/entities/branding.entity';
-import { AuditService } from '../audit/audit.service';
+import { Injectable, Logger, ForbiddenException } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { Branding } from "../../database/entities/branding.entity";
+import { AuditService } from "../audit/audit.service";
 
 @Injectable()
 export class BrandingService {
@@ -14,24 +14,26 @@ export class BrandingService {
     private readonly audit: AuditService,
   ) {}
 
-  async getOrCreate(ownerId: string): Promise<Branding> {
-    let branding = await this.brandingRepo.findOne({ where: { ownerId } });
+  async getOrCreate(ownerId: string, teamId?: string): Promise<Branding> {
+    const where: any = teamId ? { teamId } : { ownerId };
+    let branding = await this.brandingRepo.findOne({ where });
     if (!branding) {
       branding = this.brandingRepo.create({
         ownerId,
-        primaryColor: '#4F46E5',
-        secondaryColor: '#7C3AED',
-        accentColor: '#06B6D4',
-        backgroundColor: '#FFFFFF',
-        textColor: '#1E293B',
-        fontFamily: 'Inter, sans-serif',
+        ...(teamId ? { teamId } : {}),
+        primaryColor: "#4F46E5",
+        secondaryColor: "#7C3AED",
+        accentColor: "#06B6D4",
+        backgroundColor: "#FFFFFF",
+        textColor: "#1E293B",
+        fontFamily: "Inter, sans-serif",
         showPoweredBy: true,
         widgetConfig: {
-          position: 'bottom-right',
+          position: "bottom-right",
           borderRadius: 16,
           showPoweredBy: true,
-          welcomeMessage: 'Hi! How can I help you today?',
-          placeholder: 'Type a message...',
+          welcomeMessage: "Hi! How can I help you today?",
+          placeholder: "Type a message...",
         },
       });
       branding = await this.brandingRepo.save(branding);
@@ -39,8 +41,12 @@ export class BrandingService {
     return branding;
   }
 
-  async update(ownerId: string, dto: Partial<Branding>): Promise<Branding> {
-    const branding = await this.getOrCreate(ownerId);
+  async update(
+    ownerId: string,
+    dto: Partial<Branding>,
+    teamId?: string,
+  ): Promise<Branding> {
+    const branding = await this.getOrCreate(ownerId, teamId);
 
     // Merge nested objects
     if (dto.widgetConfig) {
@@ -57,8 +63,8 @@ export class BrandingService {
 
     await this.audit.log({
       userId: ownerId,
-      action: 'branding.updated',
-      resource: 'branding',
+      action: "branding.updated",
+      resource: "branding",
       resourceId: saved.id,
       details: { fields: Object.keys(dto) },
     });
@@ -66,8 +72,8 @@ export class BrandingService {
     return saved;
   }
 
-  async getPublicBranding(ownerId: string) {
-    const branding = await this.getOrCreate(ownerId);
+  async getPublicBranding(ownerId: string, teamId?: string) {
+    const branding = await this.getOrCreate(ownerId, teamId);
     return {
       companyName: branding.companyName,
       logoUrl: branding.logoUrl,
@@ -87,15 +93,15 @@ export class BrandingService {
 
   generateCssVariables(branding: Branding): string {
     return `:root {
-  --ab-primary: ${branding.primaryColor || '#4F46E5'};
-  --ab-secondary: ${branding.secondaryColor || '#7C3AED'};
-  --ab-accent: ${branding.accentColor || '#06B6D4'};
-  --ab-bg: ${branding.backgroundColor || '#FFFFFF'};
-  --ab-text: ${branding.textColor || '#1E293B'};
-  --ab-font: ${branding.fontFamily || 'Inter, sans-serif'};
-  --ab-heading-font: ${branding.headingFont || branding.fontFamily || 'Inter, sans-serif'};
+  --ab-primary: ${branding.primaryColor || "#4F46E5"};
+  --ab-secondary: ${branding.secondaryColor || "#7C3AED"};
+  --ab-accent: ${branding.accentColor || "#06B6D4"};
+  --ab-bg: ${branding.backgroundColor || "#FFFFFF"};
+  --ab-text: ${branding.textColor || "#1E293B"};
+  --ab-font: ${branding.fontFamily || "Inter, sans-serif"};
+  --ab-heading-font: ${branding.headingFont || branding.fontFamily || "Inter, sans-serif"};
   --ab-widget-radius: ${branding.widgetConfig?.borderRadius ?? 16}px;
 }
-${branding.customCss || ''}`;
+${branding.customCss || ""}`;
   }
 }

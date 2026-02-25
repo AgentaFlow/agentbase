@@ -4,17 +4,17 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-} from 'typeorm';
+} from "typeorm";
 
 export enum PluginStatus {
-  DRAFT = 'draft',
-  PUBLISHED = 'published',
-  DEPRECATED = 'deprecated',
+  DRAFT = "draft",
+  PUBLISHED = "published",
+  DEPRECATED = "deprecated",
 }
 
-@Entity('plugins')
+@Entity("plugins")
 export class Plugin {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
   @Column({ unique: true })
@@ -38,7 +38,7 @@ export class Plugin {
   @Column({ nullable: true })
   repositoryUrl: string;
 
-  @Column({ type: 'jsonb', default: {} })
+  @Column({ type: "jsonb", default: {} })
   manifest: {
     hooks?: string[];
     permissions?: string[];
@@ -47,25 +47,31 @@ export class Plugin {
     entryPoint?: string;
   };
 
-  @Column({ type: 'enum', enum: PluginStatus, default: PluginStatus.DRAFT })
+  @Column({ type: "enum", enum: PluginStatus, default: PluginStatus.DRAFT })
   status: PluginStatus;
 
   @Column({ nullable: true })
   iconUrl: string;
 
-  @Column({ type: 'simple-array', nullable: true })
+  @Column({ type: "simple-array", nullable: true })
   screenshots: string[];
 
-  @Column({ type: 'float', default: 0 })
+  @Column({ type: "float", default: 0 })
   rating: number;
 
   @Column({ default: 0 })
   downloadCount: number;
 
+  @Column({ nullable: true })
+  category: string;
+
+  @Column({ default: 0 })
+  reviewCount: number;
+
   @Column({ default: false })
   isPaid: boolean;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  @Column({ type: "decimal", precision: 10, scale: 2, nullable: true })
   price: number;
 
   @CreateDateColumn()

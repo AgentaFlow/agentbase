@@ -6,19 +6,20 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
-} from 'typeorm';
-import { User } from './user.entity';
+} from "typeorm";
+import { User } from "./user.entity";
+import { Team } from "./team.entity";
 
 export enum AppStatus {
-  DRAFT = 'draft',
-  ACTIVE = 'active',
-  PAUSED = 'paused',
-  ARCHIVED = 'archived',
+  DRAFT = "draft",
+  ACTIVE = "active",
+  PAUSED = "paused",
+  ARCHIVED = "archived",
 }
 
-@Entity('applications')
+@Entity("applications")
 export class Application {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
   @Column()
@@ -30,10 +31,10 @@ export class Application {
   @Column({ nullable: true })
   slug: string;
 
-  @Column({ type: 'enum', enum: AppStatus, default: AppStatus.DRAFT })
+  @Column({ type: "enum", enum: AppStatus, default: AppStatus.DRAFT })
   status: AppStatus;
 
-  @Column({ type: 'jsonb', default: {} })
+  @Column({ type: "jsonb", default: {} })
   config: {
     aiProvider?: string;
     aiModel?: string;
@@ -48,12 +49,19 @@ export class Application {
   @Column({ nullable: true })
   customDomain: string;
 
-  @ManyToOne(() => User, (user) => user.applications, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'ownerId' })
+  @ManyToOne(() => User, (user) => user.applications, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "ownerId" })
   owner: User;
 
   @Column()
   ownerId: string;
+
+  @ManyToOne(() => Team, { nullable: true, onDelete: "SET NULL" })
+  @JoinColumn({ name: "teamId" })
+  team: Team;
+
+  @Column({ type: "uuid", nullable: true })
+  teamId: string;
 
   @CreateDateColumn()
   createdAt: Date;

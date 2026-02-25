@@ -35,13 +35,14 @@ export class QuotaInterceptor implements NestInterceptor {
 
     // Support both JWT auth (user.sub) and API key auth (apiKeyOwner.id)
     const userId = request.user?.sub || request.apiKeyOwner?.id;
+    const teamId = request.teamId; // Set by TeamGuard
 
     if (!userId) {
       return next.handle();
     }
 
     // Pre-check: ensure user has remaining quota (check with 0 tokens to see remaining)
-    const preCheck = await this.billingService.trackUsage(userId, 0);
+    const preCheck = await this.billingService.trackUsage(userId, 0, teamId);
     if (!preCheck.allowed) {
       this.logger.warn(
         `Quota exceeded for user ${userId}, remaining: ${preCheck.remaining}`,
@@ -73,6 +74,7 @@ export class QuotaInterceptor implements NestInterceptor {
           const result = await this.billingService.trackUsage(
             userId,
             tokensUsed,
+            teamId,
           );
           response.setHeader("X-Quota-Remaining", result.remaining);
         }

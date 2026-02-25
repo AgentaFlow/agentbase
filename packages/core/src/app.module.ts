@@ -32,6 +32,8 @@ import { BrandingModule } from "./modules/branding/branding.module";
 import { SsoModule } from "./modules/sso/sso.module";
 import { DataExportModule } from "./modules/data-export/data-export.module";
 import { SystemHealthModule } from "./modules/system-health/system-health.module";
+import { StripeModule } from "./modules/stripe/stripe.module";
+import { ScheduleModule } from "@nestjs/schedule";
 
 @Module({
   imports: [
@@ -98,6 +100,8 @@ import { SystemHealthModule } from "./modules/system-health/system-health.module
     }),
 
     // Feature modules
+    StripeModule.forRoot(),
+    ScheduleModule.forRoot(),
     HealthModule,
     HooksModule,
     AuthModule,

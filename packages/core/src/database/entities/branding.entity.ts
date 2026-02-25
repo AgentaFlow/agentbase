@@ -1,21 +1,35 @@
 import {
-  Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn,
-  ManyToOne, JoinColumn, Index,
-} from 'typeorm';
-import { User } from './user.entity';
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+  Index,
+} from "typeorm";
+import { User } from "./user.entity";
+import { Team } from "./team.entity";
 
-@Entity('brandings')
-@Index(['ownerId'])
+@Entity("brandings")
+@Index(["ownerId"])
 export class Branding {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @Column({ type: 'uuid' })
+  @Column({ type: "uuid" })
   ownerId: string;
 
   @ManyToOne(() => User)
-  @JoinColumn({ name: 'ownerId' })
+  @JoinColumn({ name: "ownerId" })
   owner: User;
+
+  @ManyToOne(() => Team, { nullable: true, onDelete: "SET NULL" })
+  @JoinColumn({ name: "teamId" })
+  team: Team;
+
+  @Column({ type: "uuid", nullable: true })
+  teamId: string;
 
   @Column({ nullable: true, length: 100 })
   companyName: string;
@@ -50,9 +64,9 @@ export class Branding {
   headingFont: string;
 
   // Widget customization
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({ type: "jsonb", nullable: true })
   widgetConfig: {
-    position?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
+    position?: "bottom-right" | "bottom-left" | "top-right" | "top-left";
     borderRadius?: number;
     showPoweredBy?: boolean;
     welcomeMessage?: string;
@@ -62,7 +76,7 @@ export class Branding {
   };
 
   // Email customization
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({ type: "jsonb", nullable: true })
   emailConfig: {
     fromName?: string;
     replyTo?: string;
@@ -72,7 +86,7 @@ export class Branding {
   };
 
   // Custom CSS injection
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: "text", nullable: true })
   customCss: string;
 
   // Feature flags per brand

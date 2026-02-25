@@ -21,6 +21,7 @@ export class ApplicationsService {
   async create(
     ownerId: string,
     dto: CreateApplicationDto,
+    teamId?: string,
   ): Promise<Application> {
     if (dto.config) {
       this.validateModelForProvider(dto.config);
@@ -30,6 +31,7 @@ export class ApplicationsService {
       ...dto,
       slug,
       ownerId,
+      ...(teamId ? { teamId } : {}),
     });
     return this.appRepo.save(app);
   }
@@ -37,6 +39,13 @@ export class ApplicationsService {
   async findAllByOwner(ownerId: string): Promise<Application[]> {
     return this.appRepo.find({
       where: { ownerId },
+      order: { createdAt: "DESC" },
+    });
+  }
+
+  async findAllByTeam(teamId: string): Promise<Application[]> {
+    return this.appRepo.find({
+      where: { teamId },
       order: { createdAt: "DESC" },
     });
   }
@@ -49,10 +58,16 @@ export class ApplicationsService {
     return this.appRepo.findOne({ where: { slug } });
   }
 
-  async findById(id: string, ownerId?: string): Promise<Application> {
-    const app = await this.appRepo.findOne({ where: { id } });
+  async findById(
+    id: string,
+    ownerId?: string,
+    teamId?: string,
+  ): Promise<Application> {
+    const where: any = { id };
+    if (teamId) where.teamId = teamId;
+    const app = await this.appRepo.findOne({ where });
     if (!app) throw new NotFoundException("Application not found");
-    if (ownerId && app.ownerId !== ownerId) {
+    if (ownerId && !teamId && app.ownerId !== ownerId) {
       throw new ForbiddenException("Access denied");
     }
     return app;
@@ -62,8 +77,9 @@ export class ApplicationsService {
     id: string,
     ownerId: string,
     dto: UpdateApplicationDto,
+    teamId?: string,
   ): Promise<Application> {
-    const app = await this.findById(id, ownerId);
+    const app = await this.findById(id, ownerId, teamId);
     if (dto.config) {
       this.validateModelForProvider(dto.config);
     }
@@ -85,8 +101,8 @@ export class ApplicationsService {
     return this.appRepo.save(app);
   }
 
-  async delete(id: string, ownerId: string): Promise<void> {
-    const app = await this.findById(id, ownerId);
+  async delete(id: string, ownerId: string, teamId?: string): Promise<void> {
+    const app = await this.findById(id, ownerId, teamId);
     await this.appRepo.remove(app);
   }
 

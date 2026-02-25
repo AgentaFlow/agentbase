@@ -4,13 +4,14 @@ import {
   ConflictException,
   NotFoundException,
   Logger,
-} from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
-import * as bcrypt from 'bcrypt';
-import { UsersService } from '../users/users.service';
-import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
+} from "@nestjs/common";
+import { JwtService } from "@nestjs/jwt";
+import { ConfigService } from "@nestjs/config";
+import * as bcrypt from "bcrypt";
+import { UsersService } from "../users/users.service";
+import { TeamsService } from "../teams/teams.service";
+import { RegisterDto } from "./dto/register.dto";
+import { LoginDto } from "./dto/login.dto";
 
 @Injectable()
 export class AuthService {
@@ -18,6 +19,7 @@ export class AuthService {
 
   constructor(
     private readonly usersService: UsersService,
+    private readonly teamsService: TeamsService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
   ) {}
@@ -25,7 +27,7 @@ export class AuthService {
   async register(dto: RegisterDto) {
     const existing = await this.usersService.findByEmail(dto.email);
     if (existing) {
-      throw new ConflictException('Email already registered');
+      throw new ConflictException("Email already registered");
     }
 
     const passwordHash = await bcrypt.hash(dto.password, 12);
@@ -34,6 +36,11 @@ export class AuthService {
       passwordHash,
       displayName: dto.displayName,
     });
+
+    // Create personal team for the new user
+    const personalTeam = await this.teamsService.getOrCreatePersonalTeam(
+      user.id,
+    );
 
     const tokens = this.generateTokens(user.id, user.email, user.role);
     this.logger.log(`User registered: ${user.email}`);
@@ -45,6 +52,7 @@ export class AuthService {
         displayName: user.displayName,
         role: user.role,
       },
+      defaultTeamId: personalTeam.id,
       ...tokens,
     };
   }
@@ -52,16 +60,19 @@ export class AuthService {
   async login(dto: LoginDto) {
     const user = await this.usersService.findByEmail(dto.email);
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException("Invalid credentials");
     }
 
-    const isPasswordValid = await bcrypt.compare(dto.password, user.passwordHash);
+    const isPasswordValid = await bcrypt.compare(
+      dto.password,
+      user.passwordHash,
+    );
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException("Invalid credentials");
     }
 
     if (!user.isActive) {
-      throw new UnauthorizedException('Account is deactivated');
+      throw new UnauthorizedException("Account is deactivated");
     }
 
     await this.usersService.updateLastLogin(user.id);
@@ -81,69 +92,77 @@ export class AuthService {
   async refreshToken(refreshToken: string) {
     try {
       const payload = this.jwtService.verify(refreshToken, {
-        secret: this.configService.get('JWT_REFRESH_SECRET', 'dev-refresh-secret'),
+        secret: this.configService.get(
+          "JWT_REFRESH_SECRET",
+          "dev-refresh-secret",
+        ),
       });
 
       const user = await this.usersService.findById(payload.sub);
       if (!user || !user.isActive) {
-        throw new UnauthorizedException('Invalid refresh token');
+        throw new UnauthorizedException("Invalid refresh token");
       }
 
       return this.generateTokens(user.id, user.email, user.role);
     } catch {
-      throw new UnauthorizedException('Invalid or expired refresh token');
+      throw new UnauthorizedException("Invalid or expired refresh token");
     }
   }
 
   async requestPasswordReset(email: string) {
     const user = await this.usersService.findByEmail(email);
     if (!user) {
-      return { message: 'If the email exists, a reset link has been sent' };
+      return { message: "If the email exists, a reset link has been sent" };
     }
 
     const resetToken = this.jwtService.sign(
-      { sub: user.id, type: 'password-reset' },
-      { expiresIn: '1h', secret: this.configService.get('JWT_SECRET') },
+      { sub: user.id, type: "password-reset" },
+      { expiresIn: "1h", secret: this.configService.get("JWT_SECRET") },
     );
 
     // TODO: Send email with reset link containing resetToken
     this.logger.log(`Password reset requested for: ${email}`);
     this.logger.debug(`Reset token (dev only): ${resetToken}`);
 
-    return { message: 'If the email exists, a reset link has been sent' };
+    return { message: "If the email exists, a reset link has been sent" };
   }
 
   async resetPassword(token: string, newPassword: string) {
     try {
       const payload = this.jwtService.verify(token, {
-        secret: this.configService.get('JWT_SECRET'),
+        secret: this.configService.get("JWT_SECRET"),
       });
 
-      if (payload.type !== 'password-reset') {
-        throw new UnauthorizedException('Invalid reset token');
+      if (payload.type !== "password-reset") {
+        throw new UnauthorizedException("Invalid reset token");
       }
 
       const passwordHash = await bcrypt.hash(newPassword, 12);
       await this.usersService.update(payload.sub, { passwordHash });
 
       this.logger.log(`Password reset completed for user: ${payload.sub}`);
-      return { message: 'Password has been reset successfully' };
+      return { message: "Password has been reset successfully" };
     } catch {
-      throw new UnauthorizedException('Invalid or expired reset token');
+      throw new UnauthorizedException("Invalid or expired reset token");
     }
   }
 
-  async changePassword(userId: string, currentPassword: string, newPassword: string) {
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+  ) {
     const user = await this.usersService.findById(userId);
-    if (!user) throw new NotFoundException('User not found');
+    if (!user) throw new NotFoundException("User not found");
 
     const isValid = await bcrypt.compare(currentPassword, user.passwordHash);
-    if (!isValid) throw new UnauthorizedException('Current password is incorrect');
+    if (!isValid)
+      throw new UnauthorizedException("Current password is incorrect");
 
     const passwordHash = await bcrypt.hash(newPassword, 12);
     await this.usersService.update(userId, { passwordHash });
 
-    return { message: 'Password changed successfully' };
+    return { message: "Password changed successfully" };
   }
 
   async validateUser(userId: string) {
@@ -163,18 +182,21 @@ export class AuthService {
     const payload = { sub: userId, email, role };
 
     const accessToken = this.jwtService.sign(payload, {
-      expiresIn: this.configService.get('JWT_EXPIRATION', '24h'),
+      expiresIn: this.configService.get("JWT_EXPIRATION", "24h"),
     });
 
     const refreshToken = this.jwtService.sign(payload, {
-      secret: this.configService.get('JWT_REFRESH_SECRET', 'dev-refresh-secret'),
-      expiresIn: this.configService.get('JWT_REFRESH_EXPIRATION', '7d'),
+      secret: this.configService.get(
+        "JWT_REFRESH_SECRET",
+        "dev-refresh-secret",
+      ),
+      expiresIn: this.configService.get("JWT_REFRESH_EXPIRATION", "7d"),
     });
 
     return {
       accessToken,
       refreshToken,
-      tokenType: 'Bearer',
+      tokenType: "Bearer",
     };
   }
 }

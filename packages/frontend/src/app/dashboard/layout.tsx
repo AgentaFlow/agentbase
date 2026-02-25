@@ -4,6 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
+import { TeamProvider } from "@/context/team-context";
+import { TeamSwitcher } from "@/components/teams/team-switcher";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import NotificationBell from "@/components/notifications/notification-bell";
 
@@ -53,6 +55,9 @@ export default function DashboardLayout({
           </div>
           <span className="text-lg font-bold text-slate-900">Agentbase</span>
         </Link>
+      </div>
+      <div className="px-3 py-2 border-b">
+        <TeamSwitcher />
       </div>
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
         {navItems.map((item) => {
@@ -116,61 +121,63 @@ export default function DashboardLayout({
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen flex">
-        {/* Mobile overlay */}
-        {sidebarOpen && (
-          <div
-            className="fixed inset-0 bg-black/40 z-40 lg:hidden"
-            onClick={() => setSidebarOpen(false)}
-          />
-        )}
+      <TeamProvider>
+        <div className="min-h-screen flex">
+          {/* Mobile overlay */}
+          {sidebarOpen && (
+            <div
+              className="fixed inset-0 bg-black/40 z-40 lg:hidden"
+              onClick={() => setSidebarOpen(false)}
+            />
+          )}
 
-        {/* Sidebar — fixed on mobile, static on desktop */}
-        <aside
-          className={`
+          {/* Sidebar — fixed on mobile, static on desktop */}
+          <aside
+            className={`
           fixed inset-y-0 left-0 z-50 w-64 bg-white border-r flex flex-col
           transform transition-transform duration-200 ease-in-out
           lg:static lg:translate-x-0
           ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
         `}
-        >
-          {sidebarContent}
-        </aside>
+          >
+            {sidebarContent}
+          </aside>
 
-        <main className="flex-1 overflow-auto min-w-0">
-          {/* Top bar */}
-          <div className="h-14 border-b bg-white flex items-center justify-between px-4 sm:px-6 gap-3 sticky top-0 z-30">
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="lg:hidden p-2 -ml-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg"
-              aria-label="Open sidebar"
-            >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+          <main className="flex-1 overflow-auto min-w-0">
+            {/* Top bar */}
+            <div className="h-14 border-b bg-white flex items-center justify-between px-4 sm:px-6 gap-3 sticky top-0 z-30">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="lg:hidden p-2 -ml-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg"
+                aria-label="Open sidebar"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
-              </svg>
-            </button>
-            <div className="flex items-center gap-3 ml-auto">
-              <NotificationBell />
-              {user && (
-                <div className="w-8 h-8 bg-brand-100 rounded-full flex items-center justify-center text-xs font-medium text-brand-700">
-                  {(user.displayName || user.email || "?")[0].toUpperCase()}
-                </div>
-              )}
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 6h16M4 12h16M4 18h16"
+                  />
+                </svg>
+              </button>
+              <div className="flex items-center gap-3 ml-auto">
+                <NotificationBell />
+                {user && (
+                  <div className="w-8 h-8 bg-brand-100 rounded-full flex items-center justify-center text-xs font-medium text-brand-700">
+                    {(user.displayName || user.email || "?")[0].toUpperCase()}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-          <div className="p-4 sm:p-6 lg:p-8">{children}</div>
-        </main>
-      </div>
+            <div className="p-4 sm:p-6 lg:p-8">{children}</div>
+          </main>
+        </div>
+      </TeamProvider>
     </ProtectedRoute>
   );
 }
