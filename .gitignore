@@ -285,3 +285,4 @@ storybook-static/
 
 # Claude Code config
 .claude/
+STARTUP.md
