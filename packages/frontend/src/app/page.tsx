@@ -39,9 +39,10 @@ export default function Home() {
       <main className="flex-1 flex items-center justify-center px-6">
         <div className="max-w-3xl text-center">
           <h1 className="text-5xl font-bold text-slate-900 mb-6 leading-tight">
-            The open-source app platform for AI <br />
+            The "AI Native" Agentbase Platform
+            <br />
             <span className="text-brand-600">
-              Few-clicks AI apps. Infinite possibilities.
+              Few-clicks AI apps with infinite possibilities.
             </span>
           </h1>
           <p className="text-xl text-slate-600 mb-8 max-w-2xl mx-auto">
@@ -102,18 +103,31 @@ export default function Home() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t bg-white px-6 py-6 text-center text-slate-500 text-sm">
-        <p>
-          Agentbase is open source under GPL-3.0 · Built by{" "}
-          <a
-            href="https://www.agentaflow.com/"
-            className="text-brand-600 hover:underline"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            AgentaFlow
-          </a>
-        </p>
+      <footer className="border-t bg-white px-6 py-6">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-slate-500">
+          <p>
+            Agentbase is open source under GPL-3.0 · Built by{" "}
+            <a
+              href="https://www.agentaflow.com/"
+              className="text-brand-600 hover:underline"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              AgentaFlow
+            </a>
+          </p>
+          <div className="flex items-center gap-4">
+            <Link href="/legal/terms" className="hover:text-slate-900">
+              Terms
+            </Link>
+            <Link href="/legal/privacy" className="hover:text-slate-900">
+              Privacy
+            </Link>
+            <Link href="/legal" className="hover:text-slate-900">
+              Legal
+            </Link>
+          </div>
+        </div>
       </footer>
     </div>
   );
