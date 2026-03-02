@@ -23,17 +23,30 @@ const PROVIDERS = [
   {
     id: "openai",
     name: "OpenAI",
-    models: ["gpt-4", "gpt-4-turbo", "gpt-3.5-turbo"],
+    models: ["gpt-4", "gpt-4o", "gpt-4o-mini", "gpt-3.5-turbo"],
   },
   {
     id: "anthropic",
     name: "Anthropic",
-    models: ["claude-3-opus", "claude-3-sonnet", "claude-3-haiku"],
+    models: [
+      "claude-sonnet-4-5-20250929",
+      "claude-haiku-4-5-20251001",
+      "claude-3-5-sonnet-20241022",
+      "claude-3-opus-20240229",
+      "claude-3-sonnet-20240229",
+      "claude-3-haiku-20240307",
+    ],
   },
   {
-    id: "google",
+    id: "gemini",
     name: "Google Gemini",
-    models: ["gemini-pro", "gemini-pro-vision"],
+    models: [
+      "gemini-2.0-flash",
+      "gemini-2.5-flash-preview-05-20",
+      "gemini-2.5-pro-preview-05-06",
+      "gemini-1.5-pro",
+      "gemini-1.5-flash",
+    ],
   },
   {
     id: "huggingface",

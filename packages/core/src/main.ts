@@ -54,6 +54,7 @@ async function bootstrap() {
       "Authorization",
       "X-API-Key",
       "X-Request-ID",
+      "X-Team-Id",
     ],
     exposedHeaders: [
       "X-RateLimit-Limit",
