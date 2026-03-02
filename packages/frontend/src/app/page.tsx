@@ -39,15 +39,16 @@ export default function Home() {
       <main className="flex-1 flex items-center justify-center px-6">
         <div className="max-w-3xl text-center">
           <h1 className="text-5xl font-bold text-slate-900 mb-6 leading-tight">
-            Similar to WordPress <br />
+            The open-source app platform for AI <br />
             <span className="text-brand-600">
-              Made for AI Native Applications
+              Few-clicks AI apps. Infinite possibilities.
             </span>
           </h1>
           <p className="text-xl text-slate-600 mb-8 max-w-2xl mx-auto">
             Build, deploy, and manage AI-powered applications without the
             complexity. Plugins, themes, and a marketplace — everything you need
-            to launch AI products.
+            to launch AI products. Build AI apps the way you build websites —
+            install, extend, launch.
           </p>
           <div className="flex items-center justify-center gap-4">
             <Link
