@@ -17,6 +17,35 @@ export default function ApplicationsPage() {
   const [description, setDescription] = useState("");
   const [provider, setProvider] = useState("openai");
   const [model, setModel] = useState("gpt-4");
+
+  const PROVIDER_MODELS: Record<string, { value: string; label: string }[]> = {
+    openai: [
+      { value: "gpt-4", label: "GPT-4" },
+      { value: "gpt-4o", label: "GPT-4o" },
+      { value: "gpt-4o-mini", label: "GPT-4o Mini" },
+      { value: "gpt-3.5-turbo", label: "GPT-3.5 Turbo" },
+    ],
+    anthropic: [
+      { value: "claude-sonnet-4-5-20250929", label: "Claude Sonnet 4.5" },
+      { value: "claude-haiku-4-5-20251001", label: "Claude Haiku 4.5" },
+      { value: "claude-3-5-sonnet-20241022", label: "Claude 3.5 Sonnet" },
+      { value: "claude-3-opus-20240229", label: "Claude 3 Opus" },
+      { value: "claude-3-sonnet-20240229", label: "Claude 3 Sonnet" },
+      { value: "claude-3-haiku-20240307", label: "Claude 3 Haiku" },
+    ],
+    gemini: [
+      { value: "gemini-2.0-flash", label: "Gemini 2.0 Flash" },
+      { value: "gemini-2.5-flash-preview-05-20", label: "Gemini 2.5 Flash" },
+      { value: "gemini-2.5-pro-preview-05-06", label: "Gemini 2.5 Pro" },
+      { value: "gemini-1.5-pro", label: "Gemini 1.5 Pro" },
+      { value: "gemini-1.5-flash", label: "Gemini 1.5 Flash" },
+    ],
+  };
+
+  const handleProviderChange = (newProvider: string) => {
+    setProvider(newProvider);
+    setModel(PROVIDER_MODELS[newProvider]?.[0]?.value || "");
+  };
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [createError, setCreateError] = useState<string | null>(null);
 
@@ -105,11 +134,12 @@ export default function ApplicationsPage() {
                   </label>
                   <select
                     value={provider}
-                    onChange={(e) => setProvider(e.target.value)}
+                    onChange={(e) => handleProviderChange(e.target.value)}
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 outline-none bg-white"
                   >
                     <option value="openai">OpenAI</option>
                     <option value="anthropic">Anthropic</option>
+                    <option value="gemini">Google Gemini</option>
                   </select>
                 </div>
                 <div>
@@ -121,23 +151,11 @@ export default function ApplicationsPage() {
                     onChange={(e) => setModel(e.target.value)}
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 outline-none bg-white"
                   >
-                    {provider === "openai" ? (
-                      <>
-                        <option value="gpt-4">GPT-4</option>
-                        <option value="gpt-4o">GPT-4o</option>
-                        <option value="gpt-4o-mini">GPT-4o Mini</option>
-                        <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-                      </>
-                    ) : (
-                      <>
-                        <option value="claude-sonnet-4-5-20250929">
-                          Claude Sonnet 4.5
-                        </option>
-                        <option value="claude-haiku-4-5-20251001">
-                          Claude Haiku 4.5
-                        </option>
-                      </>
-                    )}
+                    {(PROVIDER_MODELS[provider] || []).map((m) => (
+                      <option key={m.value} value={m.value}>
+                        {m.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
