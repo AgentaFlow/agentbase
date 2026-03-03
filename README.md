@@ -6,23 +6,22 @@ Agentbase is an open-source platform that brings the WordPress model to AI devel
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![pnpm](https://img.shields.io/badge/maintained%20with-pnpm-cc00ff.svg)](https://pnpm.io/)
+[![Documentation](https://img.shields.io/badge/docs-read%20online-brightgreen)](https://agentaflow.github.io/agentbase)
+
+> 📖 **Full documentation is available at [agentaflow.github.io/agentbase](https://agentaflow.github.io/agentbase)**
+> — covering self-hosting, plugin & theme development, AI model configuration, and the full API reference.
 
 ## Screenshots
-
-<p align="center">
-  <img src="docs/images/homepage.png" alt="Agentbase Homepage" width="720" />
-</p>
-<p align="center"><em>Homepage — The main landing page of a running Agentbase instance</em></p>
-
-<p align="center">
-  <img src="docs/images/usertest.png" alt="Agentbase User Testing" width="720" />
-</p>
-<p align="center"><em>Application Dashboard — Managing AI applications, plugins, and configurations</em></p>
 
 <p align="center">
   <img src="https://github.com/user-attachments/assets/20b3393a-6ae2-4d2c-a7cc-7bc67df1dfdf" alt="AI-Native Platform" width="720" />
 </p>
 <p align="center"><em>AI-Native — Built from the ground up for AI-first applications</em></p>
+
+<p align="center">
+  <img src="docs/images/usertest.png" alt="Agentbase User Testing" width="720" />
+</p>
+<p align="center"><em>Application Dashboard — Managing AI applications, plugins, and configurations</em></p>
 
 <p align="center">
   <img src="https://github.com/user-attachments/assets/d4ad78f0-9629-42b5-afc8-92209d3a4336" alt="Chat Application" width="720" />
