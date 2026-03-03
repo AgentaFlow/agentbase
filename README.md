@@ -19,6 +19,21 @@ Agentbase is an open-source platform that brings the WordPress model to AI devel
 </p>
 <p align="center"><em>Application Dashboard — Managing AI applications, plugins, and configurations</em></p>
 
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/20b3393a-6ae2-4d2c-a7cc-7bc67df1dfdf" alt="AI-Native Platform" width="720" />
+</p>
+<p align="center"><em>AI-Native — Built from the ground up for AI-first applications</em></p>
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/d4ad78f0-9629-42b5-afc8-92209d3a4336" alt="Chat Application" width="720" />
+</p>
+<p align="center"><em>Chat Application — Fully functional AI chat app powered by your chosen model</em></p>
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/e414ab28-b39d-4d63-b748-fbc60dee103a" alt="Create Application" width="720" />
+</p>
+<p align="center"><em>Create Application — Quickly scaffold and configure a new AI application</em></p>
+
 ## Architecture
 
 ```
