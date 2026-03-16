@@ -12,6 +12,18 @@ export default function Home() {
           <span className="text-xl font-bold text-slate-900">Agentbase</span>
         </div>
         <div className="flex items-center gap-4">
+          <Link
+            href="/about"
+            className="text-slate-600 hover:text-slate-900 font-medium"
+          >
+            About
+          </Link>
+          <Link
+            href="/pricing"
+            className="text-slate-600 hover:text-slate-900 font-medium"
+          >
+            Pricing
+          </Link>
           <a
             href="https://agentaflow.github.io/agentbase"
             className="text-slate-600 hover:text-slate-900 font-medium"
@@ -56,7 +68,7 @@ export default function Home() {
               href="/register"
               className="bg-brand-600 text-white px-8 py-3 rounded-lg hover:bg-brand-700 font-semibold text-lg"
             >
-              Start Building Free
+              Start Building for Free
             </Link>
             <Link
               href="https://github.com/agentaflow/agentbase"
