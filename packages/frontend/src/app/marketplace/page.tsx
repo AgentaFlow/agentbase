@@ -437,7 +437,7 @@ export default function MarketplacePage() {
           <div className="max-w-5xl mx-auto px-6 py-16 text-center">
             <div className="text-5xl mb-6">💰</div>
             <h2 className="text-4xl font-bold text-white mb-4">
-              70% revenue share — always
+              80% revenue share — always
             </h2>
             <p className="text-slate-300 text-lg max-w-2xl mx-auto mb-10 leading-relaxed">
               We believe developers should be rewarded fairly for the value they
