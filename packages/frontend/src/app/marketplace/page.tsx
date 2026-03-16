@@ -137,7 +137,7 @@ const DEV_STEPS = [
     step: "3",
     title: "Publish & earn",
     description:
-      "Set your price, go live, and earn 70% of every sale — paid monthly with no minimum threshold.",
+      "Set your price, go live, and earn 80% of every sale — paid monthly with no minimum threshold.",
   },
 ];
 
@@ -148,7 +148,7 @@ const FAQS = [
   },
   {
     q: "What's the revenue split for developers?",
-    a: "Developers keep 70% of every paid sale. Agentbase retains 30% to cover payment processing, hosting, and platform maintenance. Payouts are processed monthly with no minimum balance required.",
+    a: "Developers keep 80% of every paid sale. Agentbase retains 20% to cover payment processing, hosting, and platform maintenance. Payouts are processed monthly with no minimum balance required.",
   },
   {
     q: "How long does marketplace review take?",
