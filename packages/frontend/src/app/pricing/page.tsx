@@ -130,6 +130,12 @@ export default function PricingPage() {
             Features
           </Link>
           <Link
+            href="/marketplace"
+            className="text-slate-600 hover:text-slate-900 font-medium"
+          >
+            Marketplace
+          </Link>
+          <Link
             href="/pricing"
             className="text-brand-600 font-medium border-b-2 border-brand-600 pb-0.5"
           >
@@ -482,6 +488,9 @@ export default function PricingPage() {
           <div className="flex items-center gap-4">
             <Link href="/features" className="hover:text-slate-900">
               Features
+            </Link>
+            <Link href="/marketplace" className="hover:text-slate-900">
+              Marketplace
             </Link>
             <Link href="/pricing" className="hover:text-slate-900">
               Pricing

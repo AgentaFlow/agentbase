@@ -19,6 +19,12 @@ export default function Home() {
             Features
           </Link>
           <Link
+            href="/marketplace"
+            className="text-slate-600 hover:text-slate-900 font-medium"
+          >
+            Marketplace
+          </Link>
+          <Link
             href="/pricing"
             className="text-slate-600 hover:text-slate-900 font-medium"
           >
