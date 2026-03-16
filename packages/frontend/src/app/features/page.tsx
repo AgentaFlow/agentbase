@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ScreenshotsGallery } from "@/components/about/screenshots-gallery"; // component path unchanged
+import { ScreenshotsGallery } from "@/components/features/screenshots-gallery"; // component path unchanged
 
 // ─── Add your screenshot images to public/features/screenshots/ ──────────────
 // Then list them here. Each entry will appear as a card in the Screenshots section.
