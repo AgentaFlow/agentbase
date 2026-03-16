@@ -286,3 +286,4 @@ storybook-static/
 # Claude Code config
 .claude/
 STARTUP.md
+.github/prompts/local-uat-launch.prompt.md
