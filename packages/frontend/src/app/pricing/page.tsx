@@ -124,10 +124,10 @@ export default function PricingPage() {
         </Link>
         <div className="flex items-center gap-4">
           <Link
-            href="/about"
+            href="/features"
             className="text-slate-600 hover:text-slate-900 font-medium"
           >
-            About
+            Features
           </Link>
           <Link
             href="/pricing"
@@ -480,8 +480,8 @@ export default function PricingPage() {
             </a>
           </p>
           <div className="flex items-center gap-4">
-            <Link href="/about" className="hover:text-slate-900">
-              About
+            <Link href="/features" className="hover:text-slate-900">
+              Features
             </Link>
             <Link href="/pricing" className="hover:text-slate-900">
               Pricing

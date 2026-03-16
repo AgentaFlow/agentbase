@@ -1,36 +1,36 @@
 import Link from "next/link";
-import { ScreenshotsGallery } from "@/components/about/screenshots-gallery";
+import { ScreenshotsGallery } from "@/components/about/screenshots-gallery"; // component path unchanged
 
-// ─── Add your screenshot images to public/about/screenshots/ ───────────────
+// ─── Add your screenshot images to public/features/screenshots/ ──────────────
 // Then list them here. Each entry will appear as a card in the Screenshots section.
 const SCREENSHOTS: { src: string; alt: string; caption: string }[] = [
   {
-    src: "/about/screenshots/ab_dashboard.png",
+    src: "/features/screenshots/ab_dashboard.png",
     alt: "Agentbase dashboard overview",
     caption: "Main dashboard",
   },
   {
-    src: "/about/screenshots/ab_chatapp.png",
+    src: "/features/screenshots/ab_chatapp.png",
     alt: "Chat application view",
     caption: "Manage your AI apps",
   },
   {
-    src: "/about/screenshots/ab_createapplication.png",
+    src: "/features/screenshots/ab_createapplication.png",
     alt: "Create a new AI application",
     caption: "Create an application in seconds",
   },
   {
-    src: "/about/screenshots/ab_customdomains.png",
+    src: "/features/screenshots/ab_customdomains.png",
     alt: "Custom domains configuration",
     caption: "Bring your own custom domain",
   },
   {
-    src: "/about/screenshots/ab_webhooks.png",
+    src: "/features/screenshots/ab_webhooks.png",
     alt: "Webhooks configuration panel",
     caption: "Connect other apps via webhooks",
   },
   {
-    src: "/about/screenshots/ab_branding.png",
+    src: "/features/screenshots/ab_branding.png",
     alt: "Branding and white-label settings",
     caption: "Full white-label branding controls",
   },
@@ -125,7 +125,7 @@ export default function AboutPage() {
         </Link>
         <div className="flex items-center gap-4">
           <Link
-            href="/about"
+            href="/features"
             className="text-brand-600 font-medium border-b-2 border-brand-600 pb-0.5"
           >
             About
@@ -251,7 +251,7 @@ export default function AboutPage() {
                       {label}
                     </p>
                     <p className="text-slate-300 text-xs">
-                      Add to public/about/screenshots/
+                      Add to public/features/screenshots/
                     </p>
                   </div>
                 ))}
@@ -442,8 +442,8 @@ export default function AboutPage() {
             </a>
           </p>
           <div className="flex items-center gap-4">
-            <Link href="/about" className="hover:text-slate-900">
-              About
+            <Link href="/features" className="hover:text-slate-900">
+              Features
             </Link>
             <Link href="/pricing" className="hover:text-slate-900">
               Pricing

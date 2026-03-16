@@ -13,10 +13,10 @@ export default function Home() {
         </div>
         <div className="flex items-center gap-4">
           <Link
-            href="/about"
+            href="/features"
             className="text-slate-600 hover:text-slate-900 font-medium"
           >
-            About
+            Features
           </Link>
           <Link
             href="/pricing"
