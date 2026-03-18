@@ -48,20 +48,27 @@ pnpm install
 
 ### 3. Environment Configuration
 
-Copy the example environment file and update values as needed:
+Copy the root environment file and the frontend environment file:
 
 ```bash
 cp .env.example .env
+cp packages/frontend/.env.example packages/frontend/.env.local
 ```
 
-Key variables to set:
+Key variables to set in `.env`:
 
-| Variable            | Description                   | Default        |
-| ------------------- | ----------------------------- | -------------- |
-| `OPENAI_API_KEY`    | OpenAI API key for GPT models | —              |
-| `ANTHROPIC_API_KEY` | Anthropic API key for Claude  | —              |
-| `GEMINI_API_KEY`    | Google Gemini API key         | —              |
-| `JWT_SECRET`        | Secret for signing JWT tokens | `CHANGE_ME...` |
+| Variable              | Description                   | Default         |
+| --------------------- | ----------------------------- | --------------- |
+| `OPENAI_API_KEY`      | OpenAI API key for GPT models | —               |
+| `ANTHROPIC_API_KEY`   | Anthropic API key for Claude  | —               |
+| `GEMINI_API_KEY`      | Google Gemini API key         | —               |
+| `HUGGINGFACE_API_KEY` | HuggingFace Inference API key | —               |
+| `JWT_SECRET`          | Secret for signing JWT tokens | `CHANGE_ME...`  |
+| `JWT_REFRESH_SECRET`  | Secret for refresh tokens     | `CHANGE_ME...`  |
+| `POSTGRES_PASSWORD`   | PostgreSQL password           | `agentbase_dev` |
+| `REDIS_PASSWORD`      | Redis password                | `agentbase_dev` |
+
+> See [Self-Hosting Guide](/self-hosting) for the full list of environment variables.
 
 ### 4. Start Infrastructure
 

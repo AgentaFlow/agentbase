@@ -119,3 +119,57 @@ registry.initialize(
 provider = registry.get_provider("openai")
 response = await provider.generate("Hello!", model="gpt-4")
 ```
+
+## AI Service API
+
+The Python AI microservice (`http://localhost:8000`) exposes these endpoints directly:
+
+### List Providers & Models
+
+```bash
+# All available providers and their configured models
+GET http://localhost:8000/api/ai/providers
+
+# Models for a specific provider
+GET http://localhost:8000/api/ai/providers/openai/models
+```
+
+### Chat (non-streaming)
+
+```bash
+POST http://localhost:8000/api/ai/conversations/{id}/messages
+Content-Type: application/json
+
+{
+  "content": "What is the capital of France?",
+  "provider": "openai",
+  "model": "gpt-4",
+  "temperature": 0.7,
+  "max_tokens": 1024,
+  "system_prompt": "You are a helpful assistant."
+}
+```
+
+### Chat (streaming via SSE)
+
+```bash
+POST http://localhost:8000/api/ai/conversations/{id}/stream
+Content-Type: application/json
+
+{
+  "content": "Write a short poem about the sea.",
+  "provider": "anthropic",
+  "model": "claude-3-sonnet-20240229",
+  "temperature": 0.8
+}
+```
+
+Response is a stream of Server-Sent Events. Each event is a JSON object:
+
+```
+data: {"type": "chunk", "content": "The "}
+data: {"type": "chunk", "content": "waves "}
+data: {"type": "done", "fullResponse": "The waves crash..."}
+```
+
+> In most cases you should use the core API (`http://localhost:3001/api`) for conversations — the AI service is an internal dependency. Use these endpoints directly only when building integrations that bypass the core API.

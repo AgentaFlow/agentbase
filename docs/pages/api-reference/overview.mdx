@@ -25,22 +25,35 @@ Authorization: Bearer eyJ...
 
 ## Core Endpoints
 
-| Resource             | Endpoints                                                                     |
-| -------------------- | ----------------------------------------------------------------------------- |
-| **Auth**             | `POST /auth/register`, `POST /auth/login`, `POST /auth/refresh`               |
-| **Users**            | `GET /users/me`, `PUT /users/me`                                              |
-| **Applications**     | `GET /applications`, `POST /applications`, `GET/PUT/DELETE /applications/:id` |
-| **Plugins**          | `GET /plugins`, `GET /plugins/:id`, install/activate/deactivate per app       |
-| **Themes**           | `GET /themes`, `GET /themes/:id`, set/customize per app                       |
-| **Conversations**    | `GET /conversations`, `POST /conversations`, send messages, stream            |
-| **Marketplace**      | browse, featured, reviews, submit, admin approval (plugins + themes)          |
-| **Model Configs**    | `GET /model-configs`, `POST /model-configs`, versioning, A/B test             |
-| **API Keys**         | `GET /api-keys`, `POST /api-keys`, `DELETE /api-keys/:id`                     |
-| **Teams**            | `GET /teams`, `POST /teams`, invite/remove members                            |
-| **Webhooks**         | `GET /webhooks`, `POST /webhooks`, `DELETE /webhooks/:id`                     |
-| **Templates**        | `GET /templates`, `POST /templates/:id/deploy`                                |
-| **Knowledge**        | `POST /knowledge`, upload documents, search                                   |
-| **Plugin Endpoints** | `ALL /plugins/:pluginId/endpoints/*` (dynamic plugin routes)                  |
+| Resource             | Endpoints                                                                               |
+| -------------------- | --------------------------------------------------------------------------------------- |
+| **Auth**             | `POST /auth/register`, `POST /auth/login`, `POST /auth/refresh`, OAuth (GitHub/Google)  |
+| **Users**            | `GET /users/me`, `PUT /users/me`, `DELETE /users/me`                                    |
+| **Applications**     | `GET /applications`, `POST /applications`, `GET/PUT/DELETE /applications/:id`           |
+| **Conversations**    | `GET /conversations`, `POST /conversations`, `POST /conversations/:id/messages`, stream |
+| **Plugins**          | `GET /plugins`, `GET /plugins/:id`, install/activate/deactivate/configure per app       |
+| **Themes**           | `GET /themes`, `GET /themes/:id`, set/customize per app                                 |
+| **Prompts**          | `GET /prompts`, `POST /prompts`, `PUT/DELETE /prompts/:id`                              |
+| **Model Configs**    | `GET /model-configs`, `POST /model-configs`, versioning, A/B testing                    |
+| **Analytics**        | `GET /analytics/overview`, usage metrics, conversation stats, cost tracking             |
+| **API Keys**         | `GET /api-keys`, `POST /api-keys`, `DELETE /api-keys/:id`                               |
+| **Teams**            | `GET /teams`, `POST /teams`, invite/remove members, role management                     |
+| **Webhooks**         | `GET /webhooks`, `POST /webhooks`, `PUT/DELETE /webhooks/:id`, delivery logs            |
+| **Marketplace**      | browse, featured, reviews, submit, install (plugins + themes)                           |
+| **Templates**        | `GET /templates`, `POST /templates/:id/deploy`                                          |
+| **Knowledge**        | `POST /knowledge` (upload), `GET /knowledge/search`, per-app RAG documents              |
+| **Uploads**          | `POST /uploads`, multipart file upload, S3-backed                                       |
+| **Billing**          | plans, `POST /billing/subscribe`, `GET /billing/invoices`, usage limits                 |
+| **Branding**         | `GET/PUT /branding/:appId` — logo, colors, custom CSS per application                   |
+| **Custom Domains**   | `GET /custom-domains`, `POST /custom-domains`, verify, activate                         |
+| **Notifications**    | `GET /notifications`, `PUT /notifications/:id/read`, mark all read                      |
+| **SSO**              | SAML/LDAP configuration, `POST /sso/saml/callback`                                      |
+| **Workflows**        | `GET /workflows`, `POST /workflows`, trigger/pause/resume automated flows               |
+| **Audit**            | `GET /audit` — immutable audit log of admin and user actions                            |
+| **Data Export**      | `POST /data-export` — export conversations, analytics, or user data as CSV/JSON         |
+| **Admin**            | `GET /admin/users`, `GET /admin/marketplace`, platform-level management (admin only)    |
+| **System Health**    | `GET /system-health` — detailed system metrics (CPU, memory, DB, Redis)                 |
+| **Plugin Endpoints** | `ALL /plugins/:pluginId/endpoints/*` — dynamic routes registered by plugins             |
 
 ## Public API (Widget)
 
@@ -50,6 +63,45 @@ The embeddable widget uses API key authentication via the `X-API-Key` header:
 POST /api/public/chat
 X-API-Key: agb_...
 { "message": "Hello!", "applicationId": "..." }
+```
+
+## AI Service Endpoints
+
+The Python AI microservice (`http://localhost:8000`) exposes its own API under `/api/ai`:
+
+| Endpoint                                  | Description                                       |
+| ----------------------------------------- | ------------------------------------------------- |
+| `GET /api/health`                         | AI service health check                           |
+| `GET /api/ai/providers`                   | List all configured AI providers and their models |
+| `GET /api/ai/providers/:provider/models`  | List models for a specific provider               |
+| `POST /api/ai/conversations`              | Create a new AI conversation (stored in MongoDB)  |
+| `GET /api/ai/conversations/:id`           | Retrieve conversation with full message history   |
+| `POST /api/ai/conversations/:id/messages` | Send a message and get an AI response             |
+| `POST /api/ai/conversations/:id/stream`   | Send a message and stream the response via SSE    |
+
+The core NestJS API communicates with the AI service internally. Clients should generally use the core API at `:3001` — the AI service endpoints are available for direct integration when needed.
+
+### Streaming (SSE)
+
+```bash
+POST http://localhost:8000/api/ai/conversations/{id}/stream
+Content-Type: application/json
+
+{
+  "content": "Explain quantum entanglement simply.",
+  "provider": "openai",
+  "model": "gpt-4",
+  "temperature": 0.7,
+  "system_prompt": "You are a helpful assistant."
+}
+```
+
+Response is a stream of Server-Sent Events:
+
+```
+data: {"type": "chunk", "content": "Quantum "}
+data: {"type": "chunk", "content": "entanglement "}
+data: {"type": "done", "fullResponse": "Quantum entanglement is..."}
 ```
 
 ## Rate Limiting
