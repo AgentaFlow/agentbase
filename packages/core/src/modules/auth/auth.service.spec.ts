@@ -8,6 +8,7 @@ import {
 } from "@nestjs/common";
 import { AuthService } from "./auth.service";
 import { UsersService } from "../users/users.service";
+import { TeamsService } from "../teams/teams.service";
 import * as bcrypt from "bcrypt";
 
 jest.mock("bcrypt");
@@ -15,6 +16,7 @@ jest.mock("bcrypt");
 describe("AuthService", () => {
   let service: AuthService;
   let usersService: Record<string, jest.Mock>;
+  let teamsService: Record<string, jest.Mock>;
   let jwtService: Record<string, jest.Mock>;
   let configService: Record<string, jest.Mock>;
 
@@ -38,6 +40,12 @@ describe("AuthService", () => {
       update: jest.fn(),
     };
 
+    teamsService = {
+      getOrCreatePersonalTeam: jest
+        .fn()
+        .mockResolvedValue({ id: "team-1", name: "Personal" }),
+    };
+
     jwtService = {
       sign: jest.fn().mockReturnValue("mock-token"),
       verify: jest.fn(),
@@ -59,6 +67,7 @@ describe("AuthService", () => {
       providers: [
         AuthService,
         { provide: UsersService, useValue: usersService },
+        { provide: TeamsService, useValue: teamsService },
         { provide: JwtService, useValue: jwtService },
         { provide: ConfigService, useValue: configService },
       ],

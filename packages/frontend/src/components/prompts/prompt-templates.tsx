@@ -46,7 +46,7 @@ export default function PromptTemplates({ applicationId, onSelectPrompt }: Promp
 
   const extractVariables = (template: string): string[] => {
     const matches = template.match(/\{\{(\w+)\}\}/g) || [];
-    return [...new Set(matches.map(m => m.replace(/\{\{|\}\}/g, '')))];
+    return Array.from(new Set(matches.map(m => m.replace(/\{\{|\}\}/g, ''))));
   };
 
   const resetForm = () => {
