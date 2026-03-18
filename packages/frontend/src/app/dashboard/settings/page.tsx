@@ -4,11 +4,13 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/context/auth-context";
 import api from "@/lib/api";
 import ApiKeyManager from "@/components/embed/api-key-manager";
+import { useTour } from "@/components/tour/TourContext";
 
 export default function SettingsPage() {
   const { user } = useAuth();
+  const { restartTour } = useTour();
   const [activeSection, setActiveSection] = useState<
-    "profile" | "security" | "apikeys" | "providers"
+    "profile" | "security" | "apikeys" | "providers" | "tour"
   >("profile");
 
   // Profile
@@ -101,6 +103,7 @@ export default function SettingsPage() {
     { key: "security" as const, label: "Security", icon: "🔒" },
     { key: "apikeys" as const, label: "API Keys", icon: "🔑" },
     { key: "providers" as const, label: "AI Providers", icon: "🤖" },
+    { key: "tour" as const, label: "Product Tour", icon: "🗺️" },
   ];
 
   return (
@@ -325,6 +328,33 @@ export default function SettingsPage() {
                 >
                   Save Provider Keys
                 </button>
+              </div>
+            </div>
+          )}
+
+          {/* Product Tour */}
+          {activeSection === "tour" && (
+            <div className="bg-white rounded-xl border p-6">
+              <h2 className="font-semibold text-slate-900 mb-1">
+                Product Tour
+              </h2>
+              <p className="text-sm text-slate-500 mb-6">
+                Take an interactive walkthrough of the key features in
+                Agentbase. The tour highlights each section of the dashboard so
+                you can get up to speed quickly.
+              </p>
+              <div className="space-y-3">
+                <button
+                  onClick={restartTour}
+                  className="flex items-center gap-3 bg-brand-600 text-white px-5 py-2.5 rounded-lg hover:bg-brand-700 font-medium text-sm transition-colors"
+                >
+                  <span>🗺️</span>
+                  Restart Tour
+                </button>
+                <p className="text-xs text-slate-400">
+                  This will reset your tour progress and show the welcome prompt
+                  again on next page load.
+                </p>
               </div>
             </div>
           )}
