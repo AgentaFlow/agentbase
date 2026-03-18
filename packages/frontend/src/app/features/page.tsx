@@ -219,6 +219,24 @@ export default function AboutPage() {
           </div>
         </section>
 
+        {/* ── Demo video ────────────────────────────────────────────── */}
+        <section className="bg-white border-t border-b">
+          <div className="max-w-4xl mx-auto px-6 py-16">
+            <p className="text-center text-sm font-semibold text-slate-400 uppercase tracking-widest mb-6">
+              See it in action
+            </p>
+            <div className="relative w-full rounded-2xl overflow-hidden shadow-lg border aspect-video">
+              <iframe
+                src="https://www.youtube.com/embed/MlvWXNynnnI"
+                title="Agentbase walkthrough"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+                className="absolute inset-0 w-full h-full"
+              />
+            </div>
+          </div>
+        </section>
+
         {/* ── Screenshots ──────────────────────────────────────────────────── */}
         {SCREENSHOTS.length > 0 ? (
           <section className="bg-white border-t border-b">
