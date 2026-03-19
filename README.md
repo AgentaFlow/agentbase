@@ -126,6 +126,7 @@ npx ts-node src/cli.ts update    # Update to latest version
 ### 🤖 AI Integration
 
 - **Multi-Provider Support** — OpenAI (GPT-4, GPT-4o, GPT-3.5), Anthropic (Claude), Google Gemini (2.0 Flash, 1.5 Pro, 1.5 Flash), HuggingFace (Inference API)
+- **BYOK (Bring Your Own Key)** — Users can securely store their own provider API keys, encrypted at rest with AES-256-GCM. BYOK keys bypass the platform quota gate entirely and are decrypted ephemerally per request — never cached or exposed to browser clients
 - **Model Configuration Dashboard** — Per-app model configs with provider selection, parameter tuning (temperature, max tokens, top-p), and system prompts
 - **A/B Testing** — Model config versioning with traffic splitting and performance metrics tracking
 - **Streaming Responses** — Server-Sent Events (SSE) for real-time token-by-token output
@@ -162,7 +163,7 @@ npx ts-node src/cli.ts update    # Update to latest version
 ### 💳 Billing & Subscriptions
 
 - **Stripe Integration** — 4 subscription tiers (Free, Starter $29/mo, Pro $99/mo, Enterprise $499/mo)
-- **Usage Metering** — Token and message quotas with enforcement before AI calls
+- **Usage Metering** — Token and message quotas with enforcement before AI calls; paid plans report overage tokens to Stripe as metered usage records for automatic per-1K-token billing
 - **Webhooks** — 11 event types with HMAC-SHA256 signing and delivery tracking
 - **Data Export/Import** — JSON and CSV export, bulk import with error handling
 
@@ -171,6 +172,7 @@ npx ts-node src/cli.ts update    # Update to latest version
 - **OAuth2** — GitHub and Google OAuth with automatic account linking
 - **JWT + Refresh Tokens** — Secure authentication with token rotation
 - **API Keys** — Create, scope, rate-limit, and revoke API keys per application
+- **Provider Key Vault** — User BYOK provider keys stored encrypted with AES-256-GCM; only a 4-character hint is ever returned by the API
 - **Role-Based Access Control** — Admin, Developer, User roles with permission guards
 - **Security Hardening** — Helmet middleware, CORS, rate limiting, HSTS, CSP headers
 
@@ -197,7 +199,7 @@ npx ts-node src/cli.ts update    # Update to latest version
 - **Self-Hosting Guide** — Complete installation and configuration instructions
 - **Plugin Development** — Getting started, SDK reference, advanced capabilities, publishing guide
 - **AI Models Guide** — Provider configuration, model settings, A/B testing
-- **API Reference** — Full marketplace and model configs API documentation
+- **API Reference** — Full marketplace, model configs, and provider keys API documentation
 - **Examples Gallery** — AI chatbot, plugin with database, custom theme, embeddable widget, RAG pipeline
 
 ## API Endpoints
@@ -258,6 +260,13 @@ npx ts-node src/cli.ts update    # Update to latest version
 - `POST /api/marketplace/admin/themes/:id/approve` — Admin: approve theme
 - `POST /api/marketplace/admin/themes/:id/reject` — Admin: reject theme
 
+### Provider Keys (BYOK)
+
+- `GET /api/provider-keys` — List saved provider keys (key hints only)
+- `PUT /api/provider-keys/:provider` — Save or replace a key (`openai` | `anthropic` | `gemini` | `huggingface`)
+- `DELETE /api/provider-keys/:provider` — Remove a saved key
+- `POST /api/provider-keys/:provider/validate` — Validate a saved key with a live test call
+
 ### Model Configs
 
 - `GET /api/model-configs?applicationId=` — List model configs
@@ -304,7 +313,14 @@ Agentbase supports multiple AI providers out of the box:
 - **Google Gemini** — Gemini 2.0 Flash, Gemini 1.5 Pro, Gemini 1.5 Flash
 - **HuggingFace** — Any model via the Inference API (Mistral, Llama, Falcon, etc.)
 
-Set your API keys in `.env` and Agentbase handles provider routing, rate limiting, and conversation management automatically.
+Configure provider keys in one of two ways:
+
+- **Platform keys** (paid plans) — set `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, etc. in `.env`. Usage is metered and included in your plan quota; overages are billed automatically via Stripe.
+- **BYOK** (all plans including Free) — users can save their own provider API keys in **Dashboard → Settings → AI Providers**. Keys are AES-256-GCM encrypted at rest and bypass the monthly quota gate entirely.
+
+Agentbase handles provider routing, rate limiting, and conversation management automatically.
+
+> **Required for BYOK:** set `ENCRYPTION_KEY` to a 64-hex-char secret (generate with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`).
 
 ## Changelog
 
