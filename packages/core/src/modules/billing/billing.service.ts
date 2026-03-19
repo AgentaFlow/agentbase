@@ -93,6 +93,14 @@ export const PLAN_DEFINITIONS = {
   },
 };
 
+/** Overage pricing per 1 000 tokens above the plan quota (in USD cents). */
+const OVERAGE_RATE_PER_1K: Record<PlanTier, number | null> = {
+  [PlanTier.FREE]: null, // Hard block — no overage
+  [PlanTier.STARTER]: 1, // $0.01 per 1 K tokens
+  [PlanTier.PRO]: 0.8, // $0.008 per 1 K tokens
+  [PlanTier.ENTERPRISE]: 0.5, // $0.005 per 1 K tokens
+};
+
 @Injectable()
 export class BillingService {
   private readonly logger = new Logger(BillingService.name);
@@ -328,6 +336,8 @@ export class BillingService {
 
   /**
    * Increment usage counters. Returns false if quota exceeded.
+   * For paid tiers, tokens above the quota are reported to Stripe as metered
+   * usage records so they appear on the user's invoice automatically.
    */
   async trackUsage(
     userId: string,
@@ -335,22 +345,66 @@ export class BillingService {
     teamId?: string,
   ): Promise<{ allowed: boolean; remaining: number }> {
     const sub = await this.getOrCreateSubscription(userId, teamId);
-    const newTokens = Number(sub.tokensUsed) + tokens;
-    const newMessages = sub.messagesUsed + 1;
+    const currentTokens = Number(sub.tokensUsed);
+    const newTokens = currentTokens + tokens;
+    const newMessages = sub.messagesUsed + (tokens > 0 ? 1 : 0);
 
-    if (newTokens > sub.tokenLimit || newMessages > sub.messagesLimit) {
-      return {
-        allowed: false,
-        remaining: Math.max(0, sub.tokenLimit - Number(sub.tokensUsed)),
-      };
+    const overageRate = OVERAGE_RATE_PER_1K[sub.plan];
+
+    // FREE tier — hard block at the limit
+    if (sub.plan === PlanTier.FREE) {
+      if (newTokens > sub.tokenLimit || newMessages > sub.messagesLimit) {
+        return {
+          allowed: false,
+          remaining: Math.max(0, sub.tokenLimit - currentTokens),
+        };
+      }
+      await this.subRepo.update(sub.id, {
+        tokensUsed: newTokens,
+        ...(tokens > 0 ? { messagesUsed: newMessages } : {}),
+      });
+      return { allowed: true, remaining: sub.tokenLimit - newTokens };
     }
 
-    await this.subRepo.update(sub.id, {
-      tokensUsed: newTokens,
-      messagesUsed: newMessages,
-    });
+    // Paid tiers — always allow; report overage to Stripe if applicable
+    const updates: Partial<typeof sub> = {
+      tokensUsed: newTokens as unknown as bigint,
+    };
+    if (tokens > 0) updates.messagesUsed = newMessages;
+    await this.subRepo.update(sub.id, updates);
 
-    return { allowed: true, remaining: sub.tokenLimit - newTokens };
+    // Report overage tokens to Stripe metered billing
+    if (
+      tokens > 0 &&
+      overageRate !== null &&
+      newTokens > sub.tokenLimit &&
+      sub.stripeSubscriptionItemId &&
+      this.stripe
+    ) {
+      // Only count the tokens that exceed the quota in this call
+      const overageTokens = Math.min(tokens, newTokens - sub.tokenLimit);
+      if (overageTokens > 0) {
+        try {
+          await (this.stripe.subscriptionItems as any).createUsageRecord(
+            sub.stripeSubscriptionItemId,
+            {
+              quantity: overageTokens,
+              timestamp: Math.floor(Date.now() / 1000),
+              action: "increment",
+            },
+          );
+          this.logger.log(
+            `Overage: reported ${overageTokens} tokens for user ${userId} (sub item ${sub.stripeSubscriptionItemId})`,
+          );
+        } catch (err) {
+          // Non-fatal — log and continue so the user's chat isn't blocked
+          this.logger.error(`Failed to report overage to Stripe: ${err}`);
+        }
+      }
+    }
+
+    const remaining = Math.max(0, sub.tokenLimit - newTokens);
+    return { allowed: true, remaining };
   }
 
   async getUsage(userId: string, teamId?: string) {

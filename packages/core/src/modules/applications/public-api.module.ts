@@ -4,9 +4,16 @@ import { ApplicationsModule } from "../applications/applications.module";
 import { AnalyticsModule } from "../analytics/analytics.module";
 import { ApiKeysModule } from "../api-keys/api-keys.module";
 import { BillingModule } from "../billing/billing.module";
+import { ProviderKeysModule } from "../provider-keys/provider-keys.module";
 
 @Module({
-  imports: [ApplicationsModule, AnalyticsModule, ApiKeysModule, BillingModule],
+  imports: [
+    ApplicationsModule,
+    AnalyticsModule,
+    ApiKeysModule,
+    BillingModule,
+    ProviderKeysModule,
+  ],
   controllers: [PublicApiController],
 })
 export class PublicApiModule {}

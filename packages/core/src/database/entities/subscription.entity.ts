@@ -66,6 +66,20 @@ export class Subscription {
   @Column({ nullable: true })
   stripePriceId: string;
 
+  /**
+   * Stripe subscription item ID for the metered usage line item.
+   * Used to report overage token usage to Stripe via usage records.
+   */
+  @Column({ nullable: true })
+  stripeSubscriptionItemId: string;
+
+  /**
+   * Stripe metered price ID for overage billing.
+   * Populated when a paid plan with overage metering is activated.
+   */
+  @Column({ nullable: true })
+  stripeMeteredPriceId: string;
+
   // --- Usage limits per billing cycle ---
   @Column({ type: "int", default: 10000 })
   tokenLimit: number;

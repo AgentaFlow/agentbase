@@ -7,13 +7,18 @@ import {
   HttpStatus,
   Logger,
   Inject,
+  Optional,
 } from "@nestjs/common";
 import { Observable, tap } from "rxjs";
 import { BillingService } from "../../modules/billing/billing.service";
+import { ProviderKeysService } from "../../modules/provider-keys/provider-keys.service";
 
 /**
  * Intercepts AI-related requests and enforces usage quotas.
  * Checks quota BEFORE the request and tracks usage AFTER a successful response.
+ *
+ * FREE-tier users who have saved a BYOK key bypass the platform quota gate —
+ * they consume their own key, not platform resources.
  *
  * Usage: Apply to controllers/routes that proxy AI requests.
  * Requires the request to have `user.sub` (from JwtAuthGuard).
@@ -24,6 +29,9 @@ export class QuotaInterceptor implements NestInterceptor {
 
   constructor(
     @Inject(BillingService) private readonly billingService: BillingService,
+    @Optional()
+    @Inject(ProviderKeysService)
+    private readonly providerKeysService: ProviderKeysService | null,
   ) {}
 
   async intercept(
@@ -44,6 +52,18 @@ export class QuotaInterceptor implements NestInterceptor {
     // Pre-check: ensure user has remaining quota (check with 0 tokens to see remaining)
     const preCheck = await this.billingService.trackUsage(userId, 0, teamId);
     if (!preCheck.allowed) {
+      // FREE-tier BYOK bypass: if the user has saved their own API key, let the
+      // request through — the controller will inject their key and the platform
+      // quota does not apply.
+      if (this.providerKeysService) {
+        const hasByok = await this.providerKeysService.hasByokKey(userId);
+        if (hasByok) {
+          // Tag the request so the controller knows BYOK bypass is active
+          request.byokQuotaBypassed = true;
+          return next.handle();
+        }
+      }
+
       this.logger.warn(
         `Quota exceeded for user ${userId}, remaining: ${preCheck.remaining}`,
       );
@@ -51,7 +71,8 @@ export class QuotaInterceptor implements NestInterceptor {
       throw new HttpException(
         {
           statusCode: HttpStatus.TOO_MANY_REQUESTS,
-          message: "Usage quota exceeded. Please upgrade your plan.",
+          message:
+            "Usage quota exceeded. Please upgrade your plan or add your own API key in Settings.",
           remaining: 0,
         },
         HttpStatus.TOO_MANY_REQUESTS,

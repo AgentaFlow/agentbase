@@ -210,7 +210,7 @@ export default function DashboardPage() {
               <Link
                 key={app.id}
                 href={`/dashboard/applications/${app.id}`}
-                className="bg-white rounded-xl border p-4 flex items-center gap-4 hover:shadow-sm transition-shadow block"
+                className="bg-white rounded-xl border p-4 flex items-center gap-4 hover:shadow-sm transition-shadow"
               >
                 <div className="w-10 h-10 bg-brand-100 rounded-lg flex items-center justify-center">
                   <span className="text-brand-600 font-bold">

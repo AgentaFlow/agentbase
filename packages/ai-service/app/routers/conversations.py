@@ -1,8 +1,8 @@
 """Conversation management and AI chat endpoints."""
 
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
-from typing import Optional
+from fastapi import APIRouter, HTTPException  # type: ignore
+from pydantic import BaseModel  # type: ignore
+from typing import Any, Dict, Optional
 from datetime import datetime
 
 from app.core.database import get_db
@@ -17,10 +17,10 @@ router = APIRouter()
 
 # Initialize providers on import
 ProviderRegistry.initialize(
-    openai_key=settings.OPENAI_API_KEY,
-    anthropic_key=settings.ANTHROPIC_API_KEY,
-    gemini_key=settings.GEMINI_API_KEY,
-    huggingface_key=settings.HUGGINGFACE_API_KEY,
+    openai_key=settings.OPENAI_API_KEY or "",
+    anthropic_key=settings.ANTHROPIC_API_KEY or "",
+    gemini_key=settings.GEMINI_API_KEY or "",
+    huggingface_key=settings.HUGGINGFACE_API_KEY or "",
 )
 
 
@@ -37,13 +37,16 @@ class SendMessageRequest(BaseModel):
     temperature: Optional[float] = 0.7
     max_tokens: Optional[int] = 2048
     system_prompt: Optional[str] = None
+    # BYOK: caller-supplied key (decrypted by the core service,
+    # transmitted over the internal network — never exposed to browsers).
+    api_key: Optional[str] = None
 
 
 @router.post("/conversations")
 async def create_conversation(req: CreateConversationRequest):
     """Create a new AI conversation."""
     db = get_db()
-    conversation = {
+    conversation: Dict[str, Any] = {
         "applicationId": req.application_id,
         "userId": req.user_id,
         "title": req.title,
@@ -61,10 +64,12 @@ async def create_conversation(req: CreateConversationRequest):
 @router.get("/conversations/{conversation_id}")
 async def get_conversation(conversation_id: str):
     """Get conversation by ID with message history."""
-    from bson import ObjectId
+    from bson import ObjectId  # type: ignore
 
     db = get_db()
-    conv = await db.ai_conversations.find_one({"_id": ObjectId(conversation_id)})
+    conv = await db.ai_conversations.find_one(
+        {"_id": ObjectId(conversation_id)}
+    )
     if not conv:
         raise HTTPException(status_code=404, detail="Conversation not found")
 
@@ -75,21 +80,42 @@ async def get_conversation(conversation_id: str):
 @router.post("/conversations/{conversation_id}/messages")
 async def send_message(conversation_id: str, req: SendMessageRequest):
     """Send a message and get an AI response."""
-    from bson import ObjectId
+    from bson import ObjectId  # type: ignore
 
     db = get_db()
-    conv = await db.ai_conversations.find_one({"_id": ObjectId(conversation_id)})
+    conv = await db.ai_conversations.find_one(
+        {"_id": ObjectId(conversation_id)}
+    )
     if not conv:
         raise HTTPException(status_code=404, detail="Conversation not found")
 
     # Determine provider
     provider_name = req.provider or settings.DEFAULT_AI_PROVIDER
-    provider = ProviderRegistry.get(provider_name)
-    if not provider:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Provider '{provider_name}' not available. Configure API key.",
-        )
+
+    # If a BYOK key was supplied by the core service, create a short-lived
+    # ephemeral provider instance (not cached — avoids key leaks
+    # across requests).
+    if req.api_key:
+        provider = ProviderRegistry.get_ephemeral(provider_name, req.api_key)
+        if not provider:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Provider '{provider_name}' is not"
+                    " supported for BYOK."
+                ),
+            )
+    else:
+        provider = ProviderRegistry.get(provider_name)
+        if not provider:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Provider '{provider_name}' not available."
+                    " Configure API key in Settings → AI"
+                    " Providers."
+                ),
+            )
 
     # Build message history
     messages = []
@@ -113,7 +139,10 @@ async def send_message(conversation_id: str, req: SendMessageRequest):
     try:
         response = await provider.chat(chat_request)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"AI provider error: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"AI provider error: {str(e)}",
+        )
 
     # Store messages
     user_msg = {

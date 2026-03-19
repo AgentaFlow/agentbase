@@ -43,7 +43,9 @@ class AIProvider(ABC):
         pass
 
     @abstractmethod
-    async def chat_stream(self, request: ChatRequest) -> AsyncGenerator[str, None]:
+    def chat_stream(
+        self, request: ChatRequest
+    ) -> AsyncGenerator[str, None]:
         pass
 
 
@@ -60,13 +62,19 @@ class OpenAIProvider(AIProvider):
 
     @property
     def available_models(self) -> list[str]:
-        return ["gpt-4", "gpt-4-turbo", "gpt-4o", "gpt-4o-mini", "gpt-3.5-turbo"]
+        return [
+            "gpt-4", "gpt-4-turbo", "gpt-4o",
+            "gpt-4o-mini", "gpt-3.5-turbo",
+        ]
 
     async def chat(self, request: ChatRequest) -> ChatResponse:
         model = request.model or "gpt-4"
         response = await self.client.chat.completions.create(
             model=model,
-            messages=[{"role": m.role, "content": m.content} for m in request.messages],
+            messages=[  # type: ignore
+                {"role": m.role, "content": m.content}  # type: ignore
+                for m in request.messages
+            ],
             temperature=request.temperature,
             max_tokens=request.max_tokens,
         )
@@ -75,22 +83,35 @@ class OpenAIProvider(AIProvider):
             model=model,
             provider=self.name,
             usage={
-                "prompt_tokens": response.usage.prompt_tokens if response.usage else 0,
-                "completion_tokens": response.usage.completion_tokens if response.usage else 0,
-                "total_tokens": response.usage.total_tokens if response.usage else 0,
+                "prompt_tokens": (
+                    response.usage.prompt_tokens if response.usage else 0
+                ),
+                "completion_tokens": (
+                    response.usage.completion_tokens
+                    if response.usage
+                    else 0
+                ),
+                "total_tokens": (
+                    response.usage.total_tokens if response.usage else 0
+                ),
             },
         )
 
-    async def chat_stream(self, request: ChatRequest) -> AsyncGenerator[str, None]:
+    async def chat_stream(
+        self, request: ChatRequest
+    ) -> AsyncGenerator[str, None]:
         model = request.model or "gpt-4"
         stream = await self.client.chat.completions.create(
             model=model,
-            messages=[{"role": m.role, "content": m.content} for m in request.messages],
+            messages=[  # type: ignore
+                {"role": m.role, "content": m.content}  # type: ignore
+                for m in request.messages
+            ],
             temperature=request.temperature,
             max_tokens=request.max_tokens,
             stream=True,
         )
-        async for chunk in stream:
+        async for chunk in stream:  # type: ignore[union-attr]
             if chunk.choices[0].delta.content:
                 yield chunk.choices[0].delta.content
 
@@ -126,20 +147,24 @@ class AnthropicProvider(AIProvider):
             model=model,
             max_tokens=request.max_tokens,
             system=system if system else "You are a helpful assistant.",
-            messages=messages,
+            messages=messages,  # type: ignore[arg-type]
         )
         return ChatResponse(
-            content=response.content[0].text,
+            content=response.content[0].text,  # type: ignore[union-attr]
             model=model,
             provider=self.name,
             usage={
                 "prompt_tokens": response.usage.input_tokens,
                 "completion_tokens": response.usage.output_tokens,
-                "total_tokens": response.usage.input_tokens + response.usage.output_tokens,
+                "total_tokens": (
+                    response.usage.input_tokens + response.usage.output_tokens
+                ),
             },
         )
 
-    async def chat_stream(self, request: ChatRequest) -> AsyncGenerator[str, None]:
+    async def chat_stream(
+        self, request: ChatRequest
+    ) -> AsyncGenerator[str, None]:
         model = request.model or "claude-sonnet-4-5-20250929"
         system = ""
         messages = []
@@ -153,7 +178,7 @@ class AnthropicProvider(AIProvider):
             model=model,
             max_tokens=request.max_tokens,
             system=system if system else "You are a helpful assistant.",
-            messages=messages,
+            messages=messages,  # type: ignore[arg-type]
         ) as stream:
             async for text in stream.text_stream:
                 yield text
@@ -163,7 +188,7 @@ class GeminiProvider(AIProvider):
     """Google Gemini provider."""
 
     def __init__(self, api_key: str):
-        import google.generativeai as genai
+        import google.generativeai as genai  # type: ignore
         self._genai = genai
         genai.configure(api_key=api_key)
 
@@ -175,8 +200,12 @@ class GeminiProvider(AIProvider):
     def available_models(self) -> list[str]:
         return ["gemini-2.0-flash", "gemini-1.5-pro", "gemini-1.5-flash"]
 
-    def _build_contents(self, messages: list[ChatMessage]) -> tuple[list[dict], str]:
-        """Convert ChatMessages to Gemini format, extracting system instruction."""
+    def _build_contents(
+        self, messages: list[ChatMessage]
+    ) -> tuple[list[dict], str]:
+        """Convert ChatMessages to Gemini format, extracting system
+        instruction.
+        """
         system_instruction = ""
         contents = []
         for m in messages:
@@ -226,7 +255,9 @@ class GeminiProvider(AIProvider):
             usage=usage,
         )
 
-    async def chat_stream(self, request: ChatRequest) -> AsyncGenerator[str, None]:
+    async def chat_stream(
+        self, request: ChatRequest
+    ) -> AsyncGenerator[str, None]:
         model_name = request.model or "gemini-2.0-flash"
         contents, system_instruction = self._build_contents(request.messages)
 
@@ -322,7 +353,9 @@ class HuggingFaceProvider(AIProvider):
             usage={},
         )
 
-    async def chat_stream(self, request: ChatRequest) -> AsyncGenerator[str, None]:
+    async def chat_stream(
+        self, request: ChatRequest
+    ) -> AsyncGenerator[str, None]:
         model = request.model or "mistralai/Mistral-7B-Instruct-v0.3"
         prompt = self._build_prompt(request.messages)
 
@@ -342,7 +375,6 @@ class HuggingFaceProvider(AIProvider):
             json=payload,
         ) as response:
             response.raise_for_status()
-            buffer = ""
             async for line in response.aiter_lines():
                 if line.startswith("data:"):
                     import json
@@ -356,7 +388,9 @@ class HuggingFaceProvider(AIProvider):
 
 
 class ProviderRegistry:
-    """Registry of available AI providers."""
+    """Registry of available AI providers (platform keys, initialized at
+    startup).
+    """
 
     _providers: dict[str, AIProvider] = {}
 
@@ -378,10 +412,10 @@ class ProviderRegistry:
     @classmethod
     def initialize(
         cls,
-        openai_key: str = None,
-        anthropic_key: str = None,
-        gemini_key: str = None,
-        huggingface_key: str = None,
+        openai_key: Optional[str] = None,
+        anthropic_key: Optional[str] = None,
+        gemini_key: Optional[str] = None,
+        huggingface_key: Optional[str] = None,
     ):
         if openai_key:
             cls.register(OpenAIProvider(openai_key))
@@ -391,3 +425,21 @@ class ProviderRegistry:
             cls.register(GeminiProvider(gemini_key))
         if huggingface_key:
             cls.register(HuggingFaceProvider(huggingface_key))
+
+    @classmethod
+    def get_ephemeral(cls, name: str, api_key: str) -> Optional[AIProvider]:
+        """
+        Create a one-time, non-cached provider instance using a
+        caller-supplied key. Used for BYOK (Bring Your Own Key) requests
+        so user keys are never stored in the registry and do not leak
+        across requests.
+        """
+        if name == "openai":
+            return OpenAIProvider(api_key)
+        if name == "anthropic":
+            return AnthropicProvider(api_key)
+        if name == "gemini":
+            return GeminiProvider(api_key)
+        if name == "huggingface":
+            return HuggingFaceProvider(api_key)
+        return None

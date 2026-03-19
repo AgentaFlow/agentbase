@@ -1,10 +1,39 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/auth-context";
 import api from "@/lib/api";
 import ApiKeyManager from "@/components/embed/api-key-manager";
 import { useTour } from "@/components/tour/TourContext";
+
+// Provider metadata for the BYOK UI
+const PROVIDERS = [
+  { id: "openai", label: "OpenAI", placeholder: "sk-…", hint: "sk-" },
+  {
+    id: "anthropic",
+    label: "Anthropic",
+    placeholder: "sk-ant-…",
+    hint: "sk-ant-",
+  },
+  {
+    id: "gemini",
+    label: "Google Gemini",
+    placeholder: "AIzaSy…",
+    hint: "AIzaSy",
+  },
+  { id: "huggingface", label: "HuggingFace", placeholder: "hf_…", hint: "hf_" },
+] as const;
+
+type ProviderId = (typeof PROVIDERS)[number]["id"];
+
+interface ProviderKeyInfo {
+  provider: ProviderId;
+  keyHint: string;
+  isActive: boolean;
+  lastUsedAt: string | null;
+  lastValidatedAt: string | null;
+  createdAt: string;
+}
 
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -27,23 +56,52 @@ export default function SettingsPage() {
   const [passwordMessage, setPasswordMessage] = useState("");
   const [passwordError, setPasswordError] = useState("");
 
-  // Provider Keys (stored locally for dev)
-  const [openaiKey, setOpenaiKey] = useState("");
-  const [anthropicKey, setAnthropicKey] = useState("");
-  const [geminiKey, setGeminiKey] = useState("");
-  const [providerKeysMessage, setProviderKeysMessage] = useState("");
+  // Provider Keys (server-backed BYOK)
+  const [savedKeys, setSavedKeys] = useState<ProviderKeyInfo[]>([]);
+  const [keysLoading, setKeysLoading] = useState(false);
+  const [keyInputs, setKeyInputs] = useState<Record<ProviderId, string>>({
+    openai: "",
+    anthropic: "",
+    gemini: "",
+    huggingface: "",
+  });
+  const [keyStatus, setKeyStatus] = useState<
+    Record<
+      ProviderId,
+      {
+        saving?: boolean;
+        validating?: boolean;
+        removing?: boolean;
+        message?: string;
+        error?: string;
+      }
+    >
+  >({ openai: {}, anthropic: {}, gemini: {}, huggingface: {} });
 
   useEffect(() => {
     if (user) {
       setDisplayName(user.displayName || "");
       setAvatarUrl((user as any).avatarUrl || "");
     }
-    if (typeof window !== "undefined") {
-      setOpenaiKey(localStorage.getItem("agentbase_openai_key") || "");
-      setAnthropicKey(localStorage.getItem("agentbase_anthropic_key") || "");
-      setGeminiKey(localStorage.getItem("agentbase_gemini_key") || "");
-    }
   }, [user]);
+
+  const loadProviderKeys = useCallback(async () => {
+    setKeysLoading(true);
+    try {
+      const keys = await api.getProviderKeys();
+      setSavedKeys(keys as ProviderKeyInfo[]);
+    } catch {
+      // Not fatal — user just won't see hints
+    } finally {
+      setKeysLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeSection === "providers") {
+      loadProviderKeys();
+    }
+  }, [activeSection, loadProviderKeys]);
 
   const handleProfileSave = async () => {
     setProfileSaving(true);
@@ -88,14 +146,99 @@ export default function SettingsPage() {
     }
   };
 
-  const handleSaveProviderKeys = () => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("agentbase_openai_key", openaiKey);
-      localStorage.setItem("agentbase_anthropic_key", anthropicKey);
-      localStorage.setItem("agentbase_gemini_key", geminiKey);
+  const setProviderStatus = (
+    provider: ProviderId,
+    update: Partial<(typeof keyStatus)[ProviderId]>,
+  ) =>
+    setKeyStatus((prev) => ({
+      ...prev,
+      [provider]: { ...prev[provider], ...update },
+    }));
+
+  const handleSaveKey = async (provider: ProviderId) => {
+    const raw = keyInputs[provider].trim();
+    if (!raw) return;
+    setProviderStatus(provider, {
+      saving: true,
+      message: undefined,
+      error: undefined,
+    });
+    try {
+      const result = await api.saveProviderKey(provider, raw);
+      setSavedKeys((prev) => {
+        const filtered = prev.filter((k) => k.provider !== provider);
+        return [...filtered, result as ProviderKeyInfo];
+      });
+      setKeyInputs((prev) => ({ ...prev, [provider]: "" }));
+      setProviderStatus(provider, {
+        saving: false,
+        message: "Key saved & encrypted ✓",
+      });
+      setTimeout(
+        () => setProviderStatus(provider, { message: undefined }),
+        4000,
+      );
+    } catch (err: any) {
+      setProviderStatus(provider, {
+        saving: false,
+        error: err.message || "Failed to save",
+      });
     }
-    setProviderKeysMessage("Provider keys saved locally!");
-    setTimeout(() => setProviderKeysMessage(""), 3000);
+  };
+
+  const handleValidateKey = async (provider: ProviderId) => {
+    setProviderStatus(provider, {
+      validating: true,
+      message: undefined,
+      error: undefined,
+    });
+    try {
+      const res = await api.validateProviderKey(provider);
+      if (res.valid) {
+        setProviderStatus(provider, {
+          validating: false,
+          message: "Key is valid ✓",
+        });
+        loadProviderKeys(); // Refresh lastValidatedAt
+      } else {
+        setProviderStatus(provider, {
+          validating: false,
+          error: res.error || "Key invalid",
+        });
+      }
+      setTimeout(
+        () =>
+          setProviderStatus(provider, { message: undefined, error: undefined }),
+        5000,
+      );
+    } catch (err: any) {
+      setProviderStatus(provider, {
+        validating: false,
+        error: err.message || "Validation failed",
+      });
+    }
+  };
+
+  const handleRemoveKey = async (provider: ProviderId) => {
+    setProviderStatus(provider, {
+      removing: true,
+      message: undefined,
+      error: undefined,
+    });
+    try {
+      await api.deleteProviderKey(provider);
+      setSavedKeys((prev) => prev.filter((k) => k.provider !== provider));
+      setProviderStatus(provider, { removing: false, message: "Key removed" });
+      setTimeout(
+        () => setProviderStatus(provider, { message: undefined }),
+        3000,
+      );
+    } catch (err: any) {
+      setProviderStatus(provider, {
+        removing: false,
+        error: err.message || "Failed to remove",
+      });
+    }
   };
 
   const sections = [
@@ -270,65 +413,134 @@ export default function SettingsPage() {
           {/* API Keys (server-backed) */}
           {activeSection === "apikeys" && <ApiKeyManager />}
 
-          {/* AI Provider Keys (local) */}
+          {/* AI Provider Keys */}
           {activeSection === "providers" && (
             <div className="bg-white rounded-xl border p-6">
               <h2 className="font-semibold text-slate-900 mb-1">
                 AI Provider Keys
               </h2>
               <p className="text-sm text-slate-500 mb-4">
-                Keys are stored locally in your browser for development. In
-                production, configure via environment variables.
+                Add your own API keys for OpenAI, Anthropic, Gemini, or
+                HuggingFace. Keys are{" "}
+                <strong>encrypted at rest on our servers</strong> with AES-256
+                and are never stored in your browser. Free-plan users must
+                provide their own key; paid plans include platform-managed AI.
               </p>
-              {providerKeysMessage && (
-                <div className="bg-green-50 text-green-600 px-4 py-3 rounded-lg text-sm mb-4">
-                  {providerKeysMessage}
+
+              {/* Info banner */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-5 text-sm text-blue-800">
+                <p className="font-medium mb-1">🔐 Bring Your Own Key (BYOK)</p>
+                <p>
+                  Your key travels over HTTPS and is decrypted only inside the
+                  AI service — it is never visible in browser devtools or server
+                  logs.{" "}
+                  <a
+                    href="https://agentaflow.github.io/agentbase/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline font-medium"
+                  >
+                    Learn more →
+                  </a>
+                </p>
+              </div>
+
+              {keysLoading ? (
+                <p className="text-sm text-slate-400 py-4">
+                  Loading saved keys…
+                </p>
+              ) : (
+                <div className="space-y-5">
+                  {PROVIDERS.map((p) => {
+                    const saved = savedKeys.find((k) => k.provider === p.id);
+                    const st = keyStatus[p.id];
+                    return (
+                      <div key={p.id} className="border rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="text-sm font-medium text-slate-700">
+                            {p.label}
+                          </label>
+                          {saved && (
+                            <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-mono">
+                              ····{saved.keyHint}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Status messages */}
+                        {st.message && (
+                          <p className="text-xs text-green-600 mb-2">
+                            {st.message}
+                          </p>
+                        )}
+                        {st.error && (
+                          <p className="text-xs text-red-500 mb-2">
+                            {st.error}
+                          </p>
+                        )}
+
+                        <div className="flex gap-2">
+                          <input
+                            type="password"
+                            value={keyInputs[p.id]}
+                            onChange={(e) =>
+                              setKeyInputs((prev) => ({
+                                ...prev,
+                                [p.id]: e.target.value,
+                              }))
+                            }
+                            placeholder={
+                              saved
+                                ? "Enter new key to replace…"
+                                : p.placeholder
+                            }
+                            className="flex-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 outline-none text-sm font-mono"
+                          />
+                          <button
+                            onClick={() => handleSaveKey(p.id)}
+                            disabled={!keyInputs[p.id].trim() || st.saving}
+                            className="bg-brand-600 text-white px-4 py-2 rounded-lg hover:bg-brand-700 disabled:opacity-40 text-sm font-medium whitespace-nowrap"
+                          >
+                            {st.saving ? "Saving…" : saved ? "Replace" : "Save"}
+                          </button>
+                        </div>
+
+                        {/* Actions for saved key */}
+                        {saved && (
+                          <div className="flex gap-3 mt-2">
+                            <button
+                              onClick={() => handleValidateKey(p.id)}
+                              disabled={st.validating}
+                              className="text-xs text-brand-600 hover:underline disabled:opacity-50"
+                            >
+                              {st.validating ? "Validating…" : "Validate key"}
+                            </button>
+                            <span className="text-slate-300">|</span>
+                            <button
+                              onClick={() => handleRemoveKey(p.id)}
+                              disabled={st.removing}
+                              className="text-xs text-red-500 hover:underline disabled:opacity-50"
+                            >
+                              {st.removing ? "Removing…" : "Remove"}
+                            </button>
+                            {saved.lastValidatedAt && (
+                              <>
+                                <span className="text-slate-300">|</span>
+                                <span className="text-xs text-slate-400">
+                                  Last validated{" "}
+                                  {new Date(
+                                    saved.lastValidatedAt,
+                                  ).toLocaleDateString()}
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    OpenAI API Key
-                  </label>
-                  <input
-                    type="password"
-                    value={openaiKey}
-                    onChange={(e) => setOpenaiKey(e.target.value)}
-                    placeholder="sk-..."
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 outline-none text-sm font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Anthropic API Key
-                  </label>
-                  <input
-                    type="password"
-                    value={anthropicKey}
-                    onChange={(e) => setAnthropicKey(e.target.value)}
-                    placeholder="sk-ant-..."
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 outline-none text-sm font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Google Gemini API Key
-                  </label>
-                  <input
-                    type="password"
-                    value={geminiKey}
-                    onChange={(e) => setGeminiKey(e.target.value)}
-                    placeholder="AIzaSy..."
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 outline-none text-sm font-mono"
-                  />
-                </div>
-                <button
-                  onClick={handleSaveProviderKeys}
-                  className="bg-brand-600 text-white px-5 py-2 rounded-lg hover:bg-brand-700 font-medium text-sm"
-                >
-                  Save Provider Keys
-                </button>
-              </div>
             </div>
           )}
 

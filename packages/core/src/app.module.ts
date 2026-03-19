@@ -33,6 +33,7 @@ import { SsoModule } from "./modules/sso/sso.module";
 import { DataExportModule } from "./modules/data-export/data-export.module";
 import { SystemHealthModule } from "./modules/system-health/system-health.module";
 import { StripeModule } from "./modules/stripe/stripe.module";
+import { ProviderKeysModule } from "./modules/provider-keys/provider-keys.module";
 import { ScheduleModule } from "@nestjs/schedule";
 
 @Module({
@@ -131,6 +132,7 @@ import { ScheduleModule } from "@nestjs/schedule";
     SsoModule,
     DataExportModule,
     SystemHealthModule,
+    ProviderKeysModule,
   ],
 })
 export class AppModule {}

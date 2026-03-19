@@ -1,12 +1,20 @@
-export { User, UserRole } from './user.entity';
-export { Application, AppStatus } from './application.entity';
-export { Plugin, PluginStatus } from './plugin.entity';
-export { Theme } from './theme.entity';
-export { InstalledPlugin, InstalledPluginStatus } from './installed-plugin.entity';
-export { ApiKey } from './api-key.entity';
-export { Subscription, PlanTier, SubscriptionStatus } from './subscription.entity';
-export { Webhook } from './webhook.entity';
-export { Team, TeamMember, TeamRole } from './team.entity';
-export { CustomDomain, DomainStatus } from './custom-domain.entity';
-export { Branding } from './branding.entity';
-export { SsoConfig, SsoProvider } from './sso-config.entity';
+export { User, UserRole } from "./user.entity";
+export { Application, AppStatus } from "./application.entity";
+export { Plugin, PluginStatus } from "./plugin.entity";
+export { Theme } from "./theme.entity";
+export {
+  InstalledPlugin,
+  InstalledPluginStatus,
+} from "./installed-plugin.entity";
+export { ApiKey } from "./api-key.entity";
+export {
+  Subscription,
+  PlanTier,
+  SubscriptionStatus,
+} from "./subscription.entity";
+export { Webhook } from "./webhook.entity";
+export { Team, TeamMember, TeamRole } from "./team.entity";
+export { CustomDomain, DomainStatus } from "./custom-domain.entity";
+export { Branding } from "./branding.entity";
+export { SsoConfig, SsoProvider } from "./sso-config.entity";
+export { UserProviderKey, AiProvider } from "./user-provider-key.entity";
