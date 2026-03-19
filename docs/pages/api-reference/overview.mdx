@@ -37,6 +37,7 @@ Authorization: Bearer eyJ...
 | **Model Configs**    | `GET /model-configs`, `POST /model-configs`, versioning, A/B testing                    |
 | **Analytics**        | `GET /analytics/overview`, usage metrics, conversation stats, cost tracking             |
 | **API Keys**         | `GET /api-keys`, `POST /api-keys`, `DELETE /api-keys/:id`                               |
+| **Provider Keys**    | `GET/PUT/DELETE /provider-keys/:provider`, `POST /provider-keys/:provider/validate`     |
 | **Teams**            | `GET /teams`, `POST /teams`, invite/remove members, role management                     |
 | **Webhooks**         | `GET /webhooks`, `POST /webhooks`, `PUT/DELETE /webhooks/:id`, delivery logs            |
 | **Marketplace**      | browse, featured, reviews, submit, install (plugins + themes)                           |
@@ -64,6 +65,34 @@ POST /api/public/chat
 X-API-Key: agb_...
 { "message": "Hello!", "applicationId": "..." }
 ```
+
+## BYOK — Bring Your Own Key
+
+Users can securely store their own AI provider API keys and bypass the platform quota entirely. Keys are AES-256-GCM encrypted at rest and never returned in full.
+
+```bash
+# List saved provider keys (returns hints only, not the real keys)
+GET /api/provider-keys
+Authorization: Bearer <token>
+# Returns: [{ "provider": "openai", "keyHint": "ab12", "isActive": true }, ...]
+
+# Save or replace a key for a provider
+PUT /api/provider-keys/:provider
+Authorization: Bearer <token>
+{ "apiKey": "sk-..." }
+# provider: openai | anthropic | gemini | huggingface
+
+# Remove a saved key
+DELETE /api/provider-keys/:provider
+Authorization: Bearer <token>
+
+# Validate a key with a live test call
+POST /api/provider-keys/:provider/validate
+Authorization: Bearer <token>
+# Returns: { "valid": true, "models": ["gpt-4", "gpt-3.5-turbo"] }
+```
+
+See [Provider Keys API](/api-reference/provider-keys) for full details.
 
 ## AI Service Endpoints
 

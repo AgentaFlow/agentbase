@@ -101,23 +101,64 @@ POST /api/model-configs/:id/versions
 }
 ```
 
+## API Key Management
+
+Agentbase supports two modes for provider API keys, which can be used together:
+
+### Platform Keys (Paid Plans)
+
+On **Starter, Pro, and Enterprise** plans the platform supplies the AI provider keys. Usage is metered and included in your plan quota. Overages are billed automatically via Stripe at a per-1,000-token rate based on your plan tier.
+
+| Plan       | Included tokens/month | Overage (per 1K tokens) |
+| ---------- | --------------------: | ----------------------: |
+| Starter    |               100,000 |                  $0.001 |
+| Pro        |               500,000 |                 $0.0008 |
+| Enterprise |             Unlimited |                  Custom |
+
+### BYOK — Bring Your Own Key (All Plans)
+
+Any user on any plan (including **Free**) can add their own provider API keys. BYOK keys:
+
+- Are **encrypted at rest** with AES-256-GCM before being stored in the database.
+- Are **never logged or returned** in full — only a 4-character hint is shown in the UI.
+- Are transmitted to the AI service over the **internal network only** — they never reach the browser.
+- Are decrypted ephemerally per request and not cached across requests.
+- **Bypass the monthly quota gate** entirely — requests using BYOK keys do not count against your plan allowance.
+
+To add a key, go to **Dashboard → Settings → AI Providers** and paste your key for any provider. You can validate it immediately and remove it at any time.
+
+```bash
+# Save a provider key
+PUT /api/provider-keys/openai
+Authorization: Bearer <your-token>
+{ "apiKey": "sk-..." }
+
+# Validate a saved key (makes a live test call)
+POST /api/provider-keys/openai/validate
+```
+
+See [Provider Keys API](/api-reference/provider-keys) for the full reference.
+
 ## Provider Abstraction
 
 The AI service uses an abstraction layer so switching providers is seamless:
 
 ```python
-# The provider registry handles initialization
-registry = ProviderRegistry()
-registry.initialize(
+# The provider registry handles initialization (platform keys)
+ProviderRegistry.initialize(
     openai_key="sk-...",
     anthropic_key="sk-ant-...",
     gemini_key="AI...",
-    huggingface_key="hf_..."
+    huggingface_key="hf_...",
 )
 
-# Get a provider
-provider = registry.get_provider("openai")
-response = await provider.generate("Hello!", model="gpt-4")
+# Standard (platform-key) provider
+provider = ProviderRegistry.get("openai")
+response = await provider.chat(chat_request)
+
+# Ephemeral BYOK provider — not cached, key never stored in registry
+byok_provider = ProviderRegistry.get_ephemeral("openai", decrypted_key)
+response = await byok_provider.chat(chat_request)
 ```
 
 ## AI Service API

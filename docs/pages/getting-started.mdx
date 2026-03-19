@@ -57,16 +57,19 @@ cp packages/frontend/.env.example packages/frontend/.env.local
 
 Key variables to set in `.env`:
 
-| Variable              | Description                   | Default         |
-| --------------------- | ----------------------------- | --------------- |
-| `OPENAI_API_KEY`      | OpenAI API key for GPT models | —               |
-| `ANTHROPIC_API_KEY`   | Anthropic API key for Claude  | —               |
-| `GEMINI_API_KEY`      | Google Gemini API key         | —               |
-| `HUGGINGFACE_API_KEY` | HuggingFace Inference API key | —               |
-| `JWT_SECRET`          | Secret for signing JWT tokens | `CHANGE_ME...`  |
-| `JWT_REFRESH_SECRET`  | Secret for refresh tokens     | `CHANGE_ME...`  |
-| `POSTGRES_PASSWORD`   | PostgreSQL password           | `agentbase_dev` |
-| `REDIS_PASSWORD`      | Redis password                | `agentbase_dev` |
+| Variable              | Description                                                     | Default         |
+| --------------------- | --------------------------------------------------------------- | --------------- |
+| `OPENAI_API_KEY`      | OpenAI API key for GPT models (platform key, optional for BYOK) | —               |
+| `ANTHROPIC_API_KEY`   | Anthropic API key for Claude (platform key, optional for BYOK)  | —               |
+| `GEMINI_API_KEY`      | Google Gemini API key (platform key, optional for BYOK)         | —               |
+| `HUGGINGFACE_API_KEY` | HuggingFace Inference API key (platform key, optional for BYOK) | —               |
+| `ENCRYPTION_KEY`      | 64-hex-char key for encrypting user BYOK provider keys at rest  | —               |
+| `JWT_SECRET`          | Secret for signing JWT tokens                                   | `CHANGE_ME...`  |
+| `JWT_REFRESH_SECRET`  | Secret for refresh tokens                                       | `CHANGE_ME...`  |
+| `POSTGRES_PASSWORD`   | PostgreSQL password                                             | `agentbase_dev` |
+| `REDIS_PASSWORD`      | Redis password                                                  | `agentbase_dev` |
+
+> **Generating `ENCRYPTION_KEY`:** run `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` — store the output securely and never rotate it without first re-encrypting all saved provider keys.
 
 > See [Self-Hosting Guide](/self-hosting) for the full list of environment variables.
 
