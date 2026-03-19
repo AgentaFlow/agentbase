@@ -147,6 +147,27 @@ export default function DashboardPage() {
         </Link>
       </div>
 
+      {/* Documentation Banner */}
+      <div className="mb-8 bg-brand-50 border border-brand-200 rounded-xl p-5 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <span className="text-2xl">📖</span>
+          <div>
+            <h3 className="font-semibold text-brand-900">Agentbase Docs</h3>
+            <p className="text-sm text-brand-700">
+              Guides, API reference, plugin development, and more.
+            </p>
+          </div>
+        </div>
+        <a
+          href="https://agentaflow.github.io/agentbase/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="shrink-0 bg-brand-600 text-white px-4 py-2 rounded-lg hover:bg-brand-700 font-medium text-sm transition-colors"
+        >
+          View Docs →
+        </a>
+      </div>
+
       {/* Recent Applications */}
       <div>
         <div className="flex items-center justify-between mb-4">
