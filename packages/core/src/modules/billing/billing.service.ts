@@ -368,7 +368,7 @@ export class BillingService {
 
     // Paid tiers — always allow; report overage to Stripe if applicable
     const updates: Partial<typeof sub> = {
-      tokensUsed: newTokens as unknown as bigint,
+      tokensUsed: newTokens,
     };
     if (tokens > 0) updates.messagesUsed = newMessages;
     await this.subRepo.update(sub.id, updates);
