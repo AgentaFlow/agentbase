@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { MongooseModule } from "@nestjs/mongoose";
 import { Plugin, InstalledPlugin, Application } from "../../database/entities";
+import { MarketplaceModule } from "../marketplace/marketplace.module";
 import {
   PluginData,
   PluginDataSchema,
@@ -18,6 +19,7 @@ import { PluginDatabaseService } from "./engine/plugin-database.service";
 
 @Module({
   imports: [
+    MarketplaceModule,
     TypeOrmModule.forFeature([Plugin, InstalledPlugin, Application]),
     MongooseModule.forFeature([
       { name: PluginData.name, schema: PluginDataSchema },

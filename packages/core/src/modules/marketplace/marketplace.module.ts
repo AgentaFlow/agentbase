@@ -19,6 +19,8 @@ import {
 import { MarketplaceService } from "./marketplace.service";
 import { MarketplaceController } from "./marketplace.controller";
 import { MarketplaceClientService } from "./marketplace-client.service";
+import { LicenseValidatorService } from "./license-validator.service";
+import { InstalledPlugin } from "../../database/entities";
 
 @Module({
   imports: [
@@ -31,7 +33,7 @@ import { MarketplaceClientService } from "./marketplace-client.service";
       }),
       inject: [ConfigService],
     }),
-    TypeOrmModule.forFeature([Plugin, Theme]),
+    TypeOrmModule.forFeature([Plugin, Theme, InstalledPlugin]),
     MongooseModule.forFeature([
       { name: PluginReview.name, schema: PluginReviewSchema },
       { name: ThemeReview.name, schema: ThemeReviewSchema },
@@ -39,7 +41,15 @@ import { MarketplaceClientService } from "./marketplace-client.service";
     ]),
   ],
   controllers: [MarketplaceController],
-  providers: [MarketplaceService, MarketplaceClientService],
-  exports: [MarketplaceService, MarketplaceClientService],
+  providers: [
+    MarketplaceService,
+    MarketplaceClientService,
+    LicenseValidatorService,
+  ],
+  exports: [
+    MarketplaceService,
+    MarketplaceClientService,
+    LicenseValidatorService,
+  ],
 })
 export class MarketplaceModule {}

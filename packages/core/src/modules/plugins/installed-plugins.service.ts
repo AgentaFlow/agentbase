@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ConflictException,
   Logger,
+  Optional,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
@@ -13,6 +14,7 @@ import {
   Application,
 } from "../../database/entities";
 import { HookEngine } from "../hooks/hook.engine";
+import { LicenseValidatorService } from "../marketplace/license-validator.service";
 
 @Injectable()
 export class InstalledPluginsService {
@@ -26,6 +28,8 @@ export class InstalledPluginsService {
     @InjectRepository(Application)
     private readonly appRepo: Repository<Application>,
     private readonly hookEngine: HookEngine,
+    @Optional()
+    private readonly licenseValidator: LicenseValidatorService | null,
   ) {}
 
   async install(
@@ -63,6 +67,25 @@ export class InstalledPluginsService {
 
     // Increment download count
     await this.pluginRepo.increment({ id: pluginId }, "downloadCount", 1);
+
+    // Validate license for paid plugins
+    if (
+      this.licenseValidator &&
+      result.settings?.isPaid === true &&
+      result.settings?.licenseKey
+    ) {
+      const valid = await this.licenseValidator.validate(
+        result.settings.licenseKey as string,
+        result,
+      );
+      if (!valid) {
+        this.logger.warn(
+          `License validation failed for plugin ${pluginId} — installed but left inactive.`,
+        );
+        result.status = InstalledPluginStatus.INACTIVE;
+        await this.installedRepo.save(result);
+      }
+    }
 
     // Fire activation hook
     await this.hookEngine.doAction("plugin:activate", {

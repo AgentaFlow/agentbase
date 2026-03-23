@@ -165,6 +165,34 @@ export class MarketplaceClientService {
     }
   }
 
+  // ─── Licenses ─────────────────────────────────────────────────────────────
+
+  async validateLicense(
+    licenseKey: string,
+    instanceId: string,
+  ): Promise<{ valid: boolean; gracePeriodEnd?: string }> {
+    if (!this.baseUrl) {
+      return { valid: false };
+    }
+
+    try {
+      const response = await firstValueFrom(
+        this.http.get(`${this.baseUrl}/licenses/validate`, {
+          params: { licenseKey, instanceId },
+        }),
+      );
+      return response.data;
+    } catch (err) {
+      const axiosErr = err as AxiosError;
+      if (axiosErr.response?.status === 404) {
+        return { valid: false };
+      }
+      // Rethrow as-is so LicenseValidatorService can handle network failures
+      // with grace period logic
+      throw err;
+    }
+  }
+
   // ─── Helpers ──────────────────────────────────────────────────────────────
 
   private buildParams(
