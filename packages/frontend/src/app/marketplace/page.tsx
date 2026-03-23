@@ -4,7 +4,7 @@ const STATS = [
   { value: "500+", label: "Plugins" },
   { value: "200+", label: "Themes" },
   { value: "50K+", label: "Installs" },
-  { value: "30%", label: "Revenue share for developers" },
+  { value: "80%", label: "Revenue share for developers" },
 ];
 
 const PLUGIN_CATEGORIES = [
@@ -398,7 +398,7 @@ export default function MarketplacePage() {
               </h2>
               <p className="text-slate-600 mb-10 leading-relaxed">
                 The Agentbase SDK makes it straightforward to build and publish
-                plugins and themes. Set your own price and keep 70% of every
+                plugins and themes. Set your own price and keep 80% of every
                 sale.
               </p>
               <div className="space-y-8">
