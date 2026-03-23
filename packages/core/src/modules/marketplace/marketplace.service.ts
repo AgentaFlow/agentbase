@@ -22,6 +22,7 @@ import {
   PluginVersion,
   PluginVersionDocument,
 } from "../../database/schemas/plugin-version.schema";
+import { MarketplaceClientService } from "./marketplace-client.service";
 
 @Injectable()
 export class MarketplaceService {
@@ -38,10 +39,11 @@ export class MarketplaceService {
     private readonly themeReviewModel: Model<ThemeReviewDocument>,
     @InjectModel(PluginVersion.name)
     private readonly pluginVersionModel: Model<PluginVersionDocument>,
+    private readonly marketplaceClient: MarketplaceClientService,
   ) {}
 
   /**
-   * Search/browse plugins in the marketplace.
+   * Search/browse plugins in the marketplace (delegated to marketplace service).
    */
   async browse(options: {
     search?: string;
@@ -50,70 +52,22 @@ export class MarketplaceService {
     page?: number;
     limit?: number;
   }) {
-    const { search, sort = "popular", page = 1, limit = 20 } = options;
-
-    const query = this.pluginRepo
-      .createQueryBuilder("p")
-      .where("p.status = :status", { status: PluginStatus.PUBLISHED });
-
-    if (search) {
-      query.andWhere(
-        "(LOWER(p.name) LIKE :s OR LOWER(p.description) LIKE :s)",
-        {
-          s: `%${search.toLowerCase()}%`,
-        },
-      );
-    }
-
-    switch (sort) {
-      case "recent":
-        query.orderBy("p.createdAt", "DESC");
-        break;
-      case "rating":
-        query.orderBy("p.createdAt", "DESC"); // Would use rating field if aggregated
-        break;
-      default:
-        query.orderBy("p.createdAt", "DESC");
-    }
-
-    const total = await query.getCount();
-    const plugins = await query
-      .skip((page - 1) * limit)
-      .take(limit)
-      .getMany();
-
-    // Enrich with ratings
-    const enriched = await Promise.all(
-      plugins.map(async (p) => {
-        const stats = await this.getPluginRatingStats(p.id);
-        return { ...p, ...stats };
-      }),
-    );
-
-    return {
-      plugins: enriched,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    };
+    return this.marketplaceClient.getPlugins(options);
   }
 
   /**
-   * Get detailed plugin info with reviews.
+   * Get detailed plugin info from marketplace, merged with local reviews.
    */
   async getPluginDetail(pluginId: string) {
-    const plugin = await this.pluginRepo.findOne({ where: { id: pluginId } });
-    if (!plugin) throw new NotFoundException("Plugin not found");
+    const plugin = await this.marketplaceClient.getPlugin(pluginId);
 
-    const stats = await this.getPluginRatingStats(pluginId);
     const reviews = await this.reviewModel
       .find({ pluginId })
       .sort({ createdAt: -1 })
       .limit(20)
       .exec();
 
-    return { ...plugin, ...stats, reviews };
+    return { ...plugin, reviews };
   }
 
   /**
@@ -181,83 +135,34 @@ export class MarketplaceService {
       throw new NotFoundException("Review not found");
   }
 
-  private async getPluginRatingStats(pluginId: string) {
-    const stats = await this.reviewModel.aggregate([
-      { $match: { pluginId } },
-      {
-        $group: {
-          _id: null,
-          avgRating: { $avg: "$rating" },
-          totalReviews: { $sum: 1 },
-          stars5: { $sum: { $cond: [{ $eq: ["$rating", 5] }, 1, 0] } },
-          stars4: { $sum: { $cond: [{ $eq: ["$rating", 4] }, 1, 0] } },
-          stars3: { $sum: { $cond: [{ $eq: ["$rating", 3] }, 1, 0] } },
-          stars2: { $sum: { $cond: [{ $eq: ["$rating", 2] }, 1, 0] } },
-          stars1: { $sum: { $cond: [{ $eq: ["$rating", 1] }, 1, 0] } },
-        },
-      },
-    ]);
-
-    if (stats.length === 0) {
-      return {
-        avgRating: 0,
-        totalReviews: 0,
-        ratingDistribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
-      };
-    }
-
-    const s = stats[0];
+  private async getPluginRatingStats(_pluginId: string) {
+    // Deprecated: rating stats are now provided by the marketplace service API.
+    // Kept as a stub in case local review logic needs it in a future phase.
     return {
-      avgRating: Math.round(s.avgRating * 10) / 10,
-      totalReviews: s.totalReviews,
-      ratingDistribution: {
-        5: s.stars5,
-        4: s.stars4,
-        3: s.stars3,
-        2: s.stars2,
-        1: s.stars1,
-      },
+      avgRating: 0,
+      totalReviews: 0,
+      ratingDistribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
     };
   }
 
   /**
-   * Featured plugins (curated or top-rated).
+   * Featured plugins (delegated to marketplace service).
    */
   async getFeatured(limit = 6) {
-    const plugins = await this.pluginRepo.find({
-      where: { status: PluginStatus.PUBLISHED },
-      take: limit,
-      order: { createdAt: "DESC" },
-    });
-
-    return Promise.all(
-      plugins.map(async (p) => ({
-        ...p,
-        ...(await this.getPluginRatingStats(p.id)),
-      })),
-    );
+    return this.marketplaceClient.getFeaturedPlugins(limit);
   }
 
   /**
-   * Get categories from plugin tags/manifests.
+   * Get plugin categories (delegated to marketplace service).
    */
-  getCategories() {
-    return [
-      { slug: "chat", name: "Chat & Messaging", icon: "💬" },
-      { slug: "analytics", name: "Analytics", icon: "📊" },
-      { slug: "integrations", name: "Integrations", icon: "🔗" },
-      { slug: "security", name: "Security", icon: "🔒" },
-      { slug: "ai-tools", name: "AI Tools", icon: "🤖" },
-      { slug: "productivity", name: "Productivity", icon: "⚡" },
-      { slug: "ecommerce", name: "E-Commerce", icon: "🛒" },
-      { slug: "content", name: "Content", icon: "📝" },
-    ];
+  async getCategories() {
+    return this.marketplaceClient.getPluginCategories();
   }
 
   // ===== Theme Marketplace =====
 
   /**
-   * Browse themes in the marketplace.
+   * Browse themes in the marketplace (delegated to marketplace service).
    */
   async browseThemes(options: {
     search?: string;
@@ -266,79 +171,22 @@ export class MarketplaceService {
     page?: number;
     limit?: number;
   }) {
-    const {
-      search,
-      category,
-      sort = "popular",
-      page = 1,
-      limit = 20,
-    } = options;
-
-    const query = this.themeRepo
-      .createQueryBuilder("t")
-      .where("t.isActive = :active", { active: true });
-
-    if (search) {
-      query.andWhere(
-        "(LOWER(t.name) LIKE :s OR LOWER(t.description) LIKE :s)",
-        {
-          s: `%${search.toLowerCase()}%`,
-        },
-      );
-    }
-
-    if (category) {
-      query.andWhere("t.category = :category", { category });
-    }
-
-    switch (sort) {
-      case "recent":
-        query.orderBy("t.createdAt", "DESC");
-        break;
-      case "rating":
-        query.orderBy("t.rating", "DESC");
-        break;
-      default:
-        query.orderBy("t.downloadCount", "DESC");
-    }
-
-    const total = await query.getCount();
-    const themes = await query
-      .skip((page - 1) * limit)
-      .take(limit)
-      .getMany();
-
-    const enriched = await Promise.all(
-      themes.map(async (t) => {
-        const stats = await this.getThemeRatingStats(t.id);
-        return { ...t, ...stats };
-      }),
-    );
-
-    return {
-      themes: enriched,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    };
+    return this.marketplaceClient.getThemes(options);
   }
 
   /**
-   * Get theme detail with reviews.
+   * Get theme detail from marketplace, merged with local reviews.
    */
   async getThemeDetail(themeId: string) {
-    const theme = await this.themeRepo.findOne({ where: { id: themeId } });
-    if (!theme) throw new NotFoundException("Theme not found");
+    const theme = await this.marketplaceClient.getTheme(themeId);
 
-    const stats = await this.getThemeRatingStats(themeId);
     const reviews = await this.themeReviewModel
       .find({ themeId })
       .sort({ createdAt: -1 })
       .limit(20)
       .exec();
 
-    return { ...theme, ...stats, reviews };
+    return { ...theme, reviews };
   }
 
   /**
@@ -412,37 +260,17 @@ export class MarketplaceService {
   }
 
   /**
-   * Featured themes.
+   * Featured themes (delegated to marketplace service).
    */
   async getFeaturedThemes(limit = 6) {
-    const themes = await this.themeRepo.find({
-      where: { isActive: true },
-      take: limit,
-      order: { downloadCount: "DESC" },
-    });
-
-    return Promise.all(
-      themes.map(async (t) => ({
-        ...t,
-        ...(await this.getThemeRatingStats(t.id)),
-      })),
-    );
+    return this.marketplaceClient.getFeaturedThemes(limit);
   }
 
   /**
-   * Get theme categories.
+   * Get theme categories (delegated to marketplace service).
    */
-  getThemeCategories() {
-    return [
-      { slug: "business", name: "Business", icon: "💼" },
-      { slug: "portfolio", name: "Portfolio", icon: "🎨" },
-      { slug: "blog", name: "Blog", icon: "📝" },
-      { slug: "ecommerce", name: "E-Commerce", icon: "🛒" },
-      { slug: "landing", name: "Landing Page", icon: "🚀" },
-      { slug: "dashboard", name: "Dashboard", icon: "📊" },
-      { slug: "minimal", name: "Minimal", icon: "✨" },
-      { slug: "creative", name: "Creative", icon: "🎭" },
-    ];
+  async getThemeCategories() {
+    return this.marketplaceClient.getThemeCategories();
   }
 
   private async getThemeRatingStats(themeId: string) {
