@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Delete,
   Param,
   Body,
@@ -9,15 +10,24 @@ import {
   UseGuards,
   Request,
 } from "@nestjs/common";
-import { ApiTags, ApiOperation, ApiBearerAuth } from "@nestjs/swagger";
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiParam,
+} from "@nestjs/swagger";
 import { MarketplaceService } from "./marketplace.service";
+import { UpdateManagerService } from "./update-manager.service";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { RolesGuard, Roles } from "../../common/guards/roles.guard";
 
 @ApiTags("marketplace")
 @Controller("marketplace")
 export class MarketplaceController {
-  constructor(private readonly marketplaceService: MarketplaceService) {}
+  constructor(
+    private readonly marketplaceService: MarketplaceService,
+    private readonly updateManagerService: UpdateManagerService,
+  ) {}
 
   // ===== Plugin Marketplace =====
 
@@ -332,5 +342,42 @@ export class MarketplaceController {
   @ApiOperation({ summary: "Reject a theme submission (admin)" })
   async rejectTheme(@Param("id") id: string) {
     return this.marketplaceService.rejectTheme(id);
+  }
+
+  // ===== Plugin Updates =====
+
+  @Get("updates/count")
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Get the number of available plugin updates" })
+  async getUpdateCount() {
+    const count = await this.updateManagerService.getUpdateCount();
+    return { count };
+  }
+
+  @Get("updates")
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Get the list of available plugin updates" })
+  async getAvailableUpdates() {
+    return this.updateManagerService.getAvailableUpdates();
+  }
+
+  @Patch("updates/:installedPluginId/mark-updated")
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: "Mark an installed plugin as updated to a new version",
+  })
+  @ApiParam({ name: "installedPluginId", description: "InstalledPlugin UUID" })
+  async markUpdated(
+    @Param("installedPluginId") installedPluginId: string,
+    @Body() body: { newVersion: string },
+  ) {
+    await this.updateManagerService.markUpdated(
+      installedPluginId,
+      body.newVersion,
+    );
+    return { success: true };
   }
 }

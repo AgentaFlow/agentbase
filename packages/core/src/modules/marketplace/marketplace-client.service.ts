@@ -8,6 +8,7 @@ import { HttpService } from "@nestjs/axios";
 import { ConfigService } from "@nestjs/config";
 import { firstValueFrom } from "rxjs";
 import { AxiosError } from "axios";
+import { createHmac } from "crypto";
 
 interface CatalogBrowseFilters {
   search?: string;
@@ -162,6 +163,62 @@ export class MarketplaceClientService {
       return response.data;
     } catch (err) {
       this.handleError(err, "fetch theme categories");
+    }
+  }
+
+  // ─── Installations ────────────────────────────────────────────────────────
+
+  /**
+   * Send a heartbeat ping to the marketplace and retrieve available plugin updates.
+   *
+   * The marketplace looks up all registered plugins for this instanceId and
+   * returns any that have a newer published version.
+   *
+   * Authentication uses HMAC-SHA256:
+   *   X-Instance-ID  = instanceId
+   *   X-Signature    = HMAC-SHA256(secret, `${instanceId}:${JSON.stringify(body)}`)
+   */
+  async ping(
+    instanceId: string,
+  ): Promise<{
+    updates: { pluginId: string; latestVersion: string; changelog: string }[];
+  }> {
+    if (!this.baseUrl) {
+      return { updates: [] };
+    }
+
+    const secret = this.config.get<string>(
+      "MARKETPLACE_INTERNAL_HMAC_SECRET",
+      "",
+    );
+    const body = {};
+    const message = `${instanceId}:${JSON.stringify(body)}`;
+    const signature = createHmac("sha256", secret)
+      .update(message)
+      .digest("hex");
+
+    try {
+      const response = await firstValueFrom(
+        this.http.post(`${this.baseUrl}/installations/ping`, body, {
+          headers: {
+            "X-Instance-ID": instanceId,
+            "X-Signature": signature,
+          },
+        }),
+      );
+      return response.data as {
+        updates: {
+          pluginId: string;
+          latestVersion: string;
+          changelog: string;
+        }[];
+      };
+    } catch (err) {
+      const axiosErr = err as AxiosError;
+      this.logger.warn(
+        `Marketplace ping failed: ${axiosErr.message} — skipping update check`,
+      );
+      return { updates: [] };
     }
   }
 

@@ -1,8 +1,17 @@
 ﻿"use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
+
+interface AvailableUpdate {
+  installedPluginId: string;
+  pluginId: string;
+  marketplacePluginId: string;
+  latestVersion: string;
+  currentVersion: string;
+  changelog: string;
+}
 
 export default function MarketplacePage() {
   const router = useRouter();
@@ -14,8 +23,10 @@ export default function MarketplacePage() {
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
+  const [updates, setUpdates] = useState<AvailableUpdate[]>([]);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-  const loadPlugins = async () => {
+  const loadPlugins = useCallback(async () => {
     setLoading(true);
     try {
       const result = await api.browseMarketplace({
@@ -30,17 +41,19 @@ export default function MarketplacePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [search, sort, page]);
 
   useEffect(() => {
     const loadInitial = async () => {
       try {
-        const [feat, cats] = await Promise.all([
+        const [feat, cats, upds] = await Promise.all([
           api.getFeaturedPlugins().catch(() => []),
           api.getMarketplaceCategories().catch(() => []),
+          api.getAvailableUpdates().catch(() => []),
         ]);
         setFeatured(feat || []);
         setCategories(cats || []);
+        setUpdates((upds as AvailableUpdate[]) || []);
       } catch {}
     };
     loadInitial();
@@ -49,11 +62,30 @@ export default function MarketplacePage() {
 
   useEffect(() => {
     loadPlugins();
-  }, [sort, page]);
+  }, [sort, page, loadPlugins]);
+
+  const handleUpdate = async (update: AvailableUpdate) => {
+    setUpdatingId(update.installedPluginId);
+    try {
+      await api.markPluginUpdated(
+        update.installedPluginId,
+        update.latestVersion,
+      );
+      setUpdates((prev) =>
+        prev.filter((u) => u.installedPluginId !== update.installedPluginId),
+      );
+    } catch {
+      // let user retry
+    } finally {
+      setUpdatingId(null);
+    }
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setPage(1);
+    // Default to relevance sort when a search query is active
+    if (search && sort === "popular") setSort("relevance");
     loadPlugins();
   };
 
@@ -88,6 +120,43 @@ export default function MarketplacePage() {
           </p>
         </div>
       </div>
+
+      {/* Available Updates Banner */}
+      {updates.length > 0 && (
+        <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm font-semibold text-amber-800">
+              🔔 {updates.length} plugin update{updates.length > 1 ? "s" : ""}{" "}
+              available
+            </span>
+          </div>
+          <div className="space-y-2">
+            {updates.map((u) => (
+              <div
+                key={u.installedPluginId}
+                className="flex items-center justify-between gap-3 rounded-lg bg-white border border-amber-100 px-4 py-2.5"
+              >
+                <div className="flex-1 min-w-0">
+                  <span className="text-sm font-medium text-slate-800 truncate block">
+                    {u.pluginId}
+                  </span>
+                  <span className="text-xs text-slate-500">
+                    {u.currentVersion} → {u.latestVersion}
+                    {u.changelog && ` · ${u.changelog}`}
+                  </span>
+                </div>
+                <button
+                  disabled={updatingId === u.installedPluginId}
+                  onClick={() => handleUpdate(u)}
+                  className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-60 transition-colors"
+                >
+                  {updatingId === u.installedPluginId ? "Updating…" : "Update"}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Categories */}
       {categories.length > 0 && (
@@ -134,6 +203,7 @@ export default function MarketplacePage() {
           }}
           className="px-3 py-2.5 border rounded-lg text-sm outline-none bg-white"
         >
+          {search && <option value="relevance">Most Relevant</option>}
           <option value="popular">Most Popular</option>
           <option value="recent">Most Recent</option>
           <option value="rating">Highest Rated</option>

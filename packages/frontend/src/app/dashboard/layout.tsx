@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
@@ -11,6 +11,7 @@ import NotificationBell from "@/components/notifications/notification-bell";
 import { TourProvider } from "@/components/tour/TourContext";
 import { WelcomeModal } from "@/components/tour/WelcomeModal";
 import { TourOverlay } from "@/components/tour/TourOverlay";
+import { api } from "@/lib/api";
 
 const navItems = [
   { href: "/dashboard", label: "Overview", icon: "🏠", tourId: undefined },
@@ -104,6 +105,16 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [updateCount, setUpdateCount] = useState(0);
+
+  useEffect(() => {
+    api
+      .getUpdateCount()
+      .then((res) => setUpdateCount(res.count))
+      .catch(() => {
+        // Silently ignore — updates badge is non-critical
+      });
+  }, []);
 
   const sidebarContent = (
     <>
@@ -127,6 +138,7 @@ export default function DashboardLayout({
           const isActive =
             pathname === item.href ||
             (item.href !== "/dashboard" && pathname.startsWith(item.href));
+          const isMarketplace = item.href === "/dashboard/marketplace";
           return (
             <Link
               key={item.href}
@@ -137,6 +149,11 @@ export default function DashboardLayout({
             >
               <span>{item.icon}</span>
               {item.label}
+              {isMarketplace && updateCount > 0 && (
+                <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-600 px-1 text-[10px] font-bold text-white">
+                  {updateCount > 99 ? "99+" : updateCount}
+                </span>
+              )}
             </Link>
           );
         })}

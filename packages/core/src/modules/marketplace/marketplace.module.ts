@@ -20,6 +20,7 @@ import { MarketplaceService } from "./marketplace.service";
 import { MarketplaceController } from "./marketplace.controller";
 import { MarketplaceClientService } from "./marketplace-client.service";
 import { LicenseValidatorService } from "./license-validator.service";
+import { UpdateManagerService } from "./update-manager.service";
 import { InstalledPlugin } from "../../database/entities";
 
 @Module({
@@ -45,11 +46,13 @@ import { InstalledPlugin } from "../../database/entities";
     MarketplaceService,
     MarketplaceClientService,
     LicenseValidatorService,
+    UpdateManagerService,
   ],
   exports: [
     MarketplaceService,
     MarketplaceClientService,
     LicenseValidatorService,
+    UpdateManagerService,
   ],
 })
 export class MarketplaceModule {}

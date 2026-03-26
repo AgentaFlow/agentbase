@@ -287,3 +287,4 @@ storybook-static/
 .claude/
 STARTUP.md
 .github/prompts/local-uat-launch.prompt.md
+agentbase.code-workspace
