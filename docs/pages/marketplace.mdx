@@ -1,6 +1,8 @@
 # Marketplace
 
-The Agentbase Marketplace is where developers share and discover plugins and themes.
+The Agentbase Marketplace is where developers share and discover plugins and themes. Browse and install free plugins from any source; paid plugins are purchased and validated through the marketplace service.
+
+> **Architecture note:** The marketplace catalog and license validation are provided by a separate hosted service at `marketplace.agentbase.dev`. Set the `MARKETPLACE_URL` environment variable in your installation to connect. When `MARKETPLACE_URL` is not set, browse endpoints return empty results and paid plugin validation is skipped.
 
 ## Browsing
 
@@ -22,6 +24,8 @@ GET /api/marketplace/featured
 # Categories
 GET /api/marketplace/categories
 ```
+
+Supported `sort` values: `popular`, `recent`, `rating`.
 
 ### Themes
 
@@ -78,6 +82,77 @@ Reviews are upserted — one review per user per plugin. Submitting again update
 DELETE /api/marketplace/plugins/:id/reviews
 Authorization: Bearer <token>
 ```
+
+## Plugin Versioning
+
+```bash
+# List all versions
+GET /api/marketplace/plugins/:id/versions
+
+# Get a specific version
+GET /api/marketplace/plugins/:id/versions/:version
+```
+
+## Developer Submission
+
+Submit your plugin or theme for review. It will appear in the marketplace once approved by an admin.
+
+```bash
+POST /api/marketplace/submit/plugin
+Authorization: Bearer <token>
+{
+  "name": "my-plugin",
+  "slug": "my-plugin",
+  "version": "1.0.0",
+  "description": "A great plugin for Agentbase",
+  "author": "Your Name",
+  "authorUrl": "https://yoursite.com",
+  "repositoryUrl": "https://github.com/you/my-plugin",
+  "iconUrl": "https://yoursite.com/icon.png",
+  "screenshots": ["https://yoursite.com/screenshot1.png"],
+  "isPaid": false
+}
+```
+
+For paid plugins, include `"isPaid": true` and `"price": 9.99`. Themes are submitted to `POST /api/marketplace/submit/theme` with similar fields plus `previewUrl` and `category`.
+
+After approval, publish new versions:
+
+```bash
+POST /api/marketplace/plugins/:id/versions
+Authorization: Bearer <token>
+{
+  "version": "1.1.0",
+  "changelog": "Added new feature X, fixed bug Y",
+  "downloadUrl": "https://cdn.example.com/my-plugin-1.1.0.tgz",
+  "compatibility": {
+    "minPlatformVersion": "0.1.0"
+  }
+}
+```
+
+## Plugin Updates
+
+The platform automatically checks for new plugin versions daily. Use these endpoints to surface update notifications in your UI:
+
+```bash
+# Number of plugins with available updates
+GET /api/marketplace/updates/count
+Authorization: Bearer <token>
+
+# Full list of available updates
+GET /api/marketplace/updates
+Authorization: Bearer <token>
+
+# Mark a plugin as updated after upgrade completes
+PATCH /api/marketplace/updates/:installedPluginId/mark-updated
+Authorization: Bearer <token>
+{ "newVersion": "1.2.0" }
+```
+
+## License Validation
+
+Paid plugins require a license key that is validated against the marketplace service on activation and periodically thereafter. Validation results are cached for 5 minutes. If the marketplace is unreachable, the platform grants a 72-hour grace period before deactivating the plugin.
 
 ## Categories
 

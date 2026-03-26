@@ -61,13 +61,17 @@ POST /api/marketplace/plugins/:id/versions
 {
   "version": "1.1.0",
   "changelog": "Added new feature X, fixed bug Y",
+  "downloadUrl": "https://cdn.example.com/my-plugin-1.1.0.tgz",
+  "fileSize": 102400,
+  "checksum": "sha256:abc123...",
   "compatibility": {
-    "minPlatformVersion": "0.1.0"
+    "minPlatformVersion": "0.1.0",
+    "maxPlatformVersion": "2.0.0"
   }
 }
 ```
 
-Users will see version history and changelogs on the marketplace listing.
+All fields except `version` are optional.
 
 ## Pricing
 

@@ -11,20 +11,20 @@ All marketplace endpoints are prefixed with `/marketplace`.
 ### Browse Plugins
 
 ```
-GET /marketplace/plugins/browse
+GET /marketplace/browse
 ```
 
 Returns a paginated list of published plugins.
 
 **Query Parameters:**
 
-| Parameter  | Type   | Default | Description                |
-| ---------- | ------ | ------- | -------------------------- |
-| `page`     | number | 1       | Page number                |
-| `limit`    | number | 20      | Items per page             |
-| `search`   | string | —       | Search by name/description |
-| `category` | string | —       | Filter by category         |
-| `sortBy`   | string | `name`  | Sort field                 |
+| Parameter  | Type   | Default   | Description                               |
+| ---------- | ------ | --------- | ----------------------------------------- |
+| `page`     | number | 1         | Page number                               |
+| `limit`    | number | 20        | Items per page (max 100)                  |
+| `search`   | string | —         | Search by name/description                |
+| `category` | string | —         | Filter by category slug                   |
+| `sort`     | string | `popular` | Sort order: `popular`, `recent`, `rating` |
 
 **Response:**
 
@@ -143,23 +143,24 @@ POST /marketplace/plugins/:id/reviews
 
 **Auth Required:** Yes (JWT)
 
+Reviews are upserted — submitting again updates your existing review.
+
 **Request Body:**
 
 ```json
 {
   "rating": 5,
-  "title": "Excellent plugin",
-  "comment": "Works great for my use case."
+  "review": "Works great for my use case."
 }
 ```
 
 ### Delete Plugin Review
 
 ```
-DELETE /marketplace/plugins/:id/reviews/:reviewId
+DELETE /marketplace/plugins/:id/reviews
 ```
 
-**Auth Required:** Yes (JWT) — must be review author or admin.
+**Auth Required:** Yes (JWT) — deletes your own review for this plugin.
 
 ---
 
@@ -181,7 +182,10 @@ Returns all published versions for a plugin, sorted by release date descending.
     "pluginId": "uuid",
     "version": "1.2.0",
     "changelog": "Added new AI features",
-    "compatibility": ">=0.5.0",
+    "compatibility": {
+      "minPlatformVersion": "0.1.0",
+      "maxPlatformVersion": "1.0.0"
+    },
     "downloadUrl": "https://cdn.agentbase.dev/plugins/my-plugin/1.2.0.tgz",
     "fileSize": 45000,
     "checksum": "sha256:abc123...",
@@ -213,12 +217,17 @@ POST /marketplace/plugins/:id/versions
 {
   "version": "1.2.0",
   "changelog": "Added new AI features",
-  "compatibility": ">=0.5.0",
   "downloadUrl": "https://cdn.agentbase.dev/plugins/my-plugin/1.2.0.tgz",
   "fileSize": 45000,
-  "checksum": "sha256:abc123..."
+  "checksum": "sha256:abc123...",
+  "compatibility": {
+    "minPlatformVersion": "0.1.0",
+    "maxPlatformVersion": "1.0.0"
+  }
 }
 ```
+
+All fields except `version` are optional.
 
 ---
 
@@ -227,19 +236,20 @@ POST /marketplace/plugins/:id/versions
 ### Browse Themes
 
 ```
-GET /marketplace/themes/browse
+GET /marketplace/themes
 ```
 
 Returns a paginated list of published themes.
 
 **Query Parameters:**
 
-| Parameter  | Type   | Default | Description                |
-| ---------- | ------ | ------- | -------------------------- |
-| `page`     | number | 1       | Page number                |
-| `limit`    | number | 20      | Items per page             |
-| `search`   | string | —       | Search by name/description |
-| `category` | string | —       | Filter by category         |
+| Parameter  | Type   | Default   | Description                               |
+| ---------- | ------ | --------- | ----------------------------------------- |
+| `page`     | number | 1         | Page number                               |
+| `limit`    | number | 20        | Items per page                            |
+| `search`   | string | —         | Search by name/description                |
+| `category` | string | —         | Filter by category slug                   |
+| `sort`     | string | `popular` | Sort order: `popular`, `recent`, `rating` |
 
 **Response:**
 
@@ -308,23 +318,24 @@ POST /marketplace/themes/:id/reviews
 
 **Auth Required:** Yes (JWT)
 
+Reviews are upserted — submitting again updates your existing review.
+
 **Request Body:**
 
 ```json
 {
   "rating": 5,
-  "title": "Beautiful theme",
-  "comment": "Love the design!"
+  "review": "Love the design!"
 }
 ```
 
 ### Delete Theme Review
 
 ```
-DELETE /marketplace/themes/:id/reviews/:reviewId
+DELETE /marketplace/themes/:id/reviews
 ```
 
-**Auth Required:** Yes (JWT) — must be review author or admin.
+**Auth Required:** Yes (JWT) — deletes your own review for this theme.
 
 ---
 
@@ -338,20 +349,37 @@ POST /marketplace/submit/plugin
 
 **Auth Required:** Yes (JWT)
 
-Submit a new plugin for marketplace review. The plugin is created in `DRAFT` status.
+Submit a new plugin for marketplace review. The plugin enters a review queue before being published.
 
 **Request Body:**
+
+| Field           | Type     | Required | Description                          |
+| --------------- | -------- | -------- | ------------------------------------ |
+| `name`          | string   | ✓        | Machine-readable name (slug)         |
+| `slug`          | string   | ✓        | URL-friendly identifier              |
+| `version`       | string   | ✓        | SemVer version (e.g. `1.0.0`)        |
+| `description`   | string   |          | Short description                    |
+| `author`        | string   |          | Author display name                  |
+| `authorUrl`     | string   |          | Author website URL                   |
+| `repositoryUrl` | string   |          | Source code repository URL           |
+| `iconUrl`       | string   |          | Plugin icon image URL                |
+| `screenshots`   | string[] |          | Array of screenshot URLs             |
+| `isPaid`        | boolean  |          | Whether the plugin is a paid listing |
+| `price`         | number   |          | Price in USD (required if isPaid)    |
+| `manifest`      | object   |          | Full plugin manifest JSON            |
 
 ```json
 {
   "name": "my-plugin",
-  "displayName": "My Plugin",
-  "description": "A useful AI plugin",
+  "slug": "my-plugin",
   "version": "1.0.0",
-  "author": "your-username",
-  "category": "ai",
-  "homepage": "https://example.com",
-  "repository": "https://github.com/example/my-plugin"
+  "description": "A useful AI plugin for Agentbase",
+  "author": "Your Name",
+  "authorUrl": "https://yoursite.com",
+  "repositoryUrl": "https://github.com/you/my-plugin",
+  "iconUrl": "https://yoursite.com/icon.png",
+  "screenshots": ["https://yoursite.com/screenshot1.png"],
+  "isPaid": false
 }
 ```
 
@@ -363,19 +391,36 @@ POST /marketplace/submit/theme
 
 **Auth Required:** Yes (JWT)
 
-Submit a new theme for marketplace review. The theme is created in `DRAFT` status.
+Submit a new theme for marketplace review.
 
 **Request Body:**
+
+| Field           | Type     | Required | Description                       |
+| --------------- | -------- | -------- | --------------------------------- |
+| `name`          | string   | ✓        | Machine-readable name             |
+| `slug`          | string   | ✓        | URL-friendly identifier           |
+| `version`       | string   | ✓        | SemVer version                    |
+| `description`   | string   |          | Short description                 |
+| `author`        | string   |          | Author display name               |
+| `authorUrl`     | string   |          | Author website URL                |
+| `previewUrl`    | string   |          | Live preview URL                  |
+| `iconUrl`       | string   |          | Theme icon image URL              |
+| `screenshots`   | string[] |          | Array of screenshot URLs          |
+| `category`      | string   |          | Theme category slug               |
+| `isPaid`        | boolean  |          | Whether this is a paid listing    |
+| `price`         | number   |          | Price in USD (required if isPaid) |
+| `manifest`      | object   |          | Full theme manifest JSON          |
+| `defaultStyles` | object   |          | Default style variables           |
 
 ```json
 {
   "name": "my-theme",
-  "displayName": "My Theme",
-  "description": "A beautiful responsive theme",
+  "slug": "my-theme",
   "version": "1.0.0",
-  "author": "your-username",
-  "category": "modern",
-  "previewUrl": "https://cdn.example.com/preview.png"
+  "description": "A beautiful responsive theme",
+  "category": "business",
+  "previewUrl": "https://preview.example.com",
+  "isPaid": false
 }
 ```
 
@@ -388,12 +433,12 @@ All admin endpoints require the `admin` role.
 ### Get Pending Plugins
 
 ```
-GET /marketplace/admin/plugins/pending
+GET /marketplace/admin/pending/plugins
 ```
 
 **Auth Required:** Yes (JWT + Admin role)
 
-Returns all plugins awaiting approval (inactive status).
+Returns plugins awaiting review. Supports `page` and `limit` query parameters.
 
 ### Approve Plugin
 
@@ -403,8 +448,6 @@ POST /marketplace/admin/plugins/:id/approve
 
 **Auth Required:** Yes (JWT + Admin role)
 
-Sets the plugin to active/published status.
-
 ### Reject Plugin
 
 ```
@@ -413,21 +456,15 @@ POST /marketplace/admin/plugins/:id/reject
 
 **Auth Required:** Yes (JWT + Admin role)
 
-**Request Body:**
-
-```json
-{
-  "reason": "Plugin does not meet quality guidelines."
-}
-```
-
 ### Get Pending Themes
 
 ```
-GET /marketplace/admin/themes/pending
+GET /marketplace/admin/pending/themes
 ```
 
 **Auth Required:** Yes (JWT + Admin role)
+
+Returns themes awaiting review. Supports `page` and `limit` query parameters.
 
 ### Approve Theme
 
@@ -445,12 +482,71 @@ POST /marketplace/admin/themes/:id/reject
 
 **Auth Required:** Yes (JWT + Admin role)
 
+---
+
+## Plugin Updates
+
+The platform automatically checks for updates to installed plugins once per day via a background job. The following endpoints expose update state to the UI.
+
+### Get Update Count
+
+```
+GET /marketplace/updates/count
+```
+
+**Auth Required:** Yes (JWT)
+
+**Response:**
+
+```json
+{ "count": 3 }
+```
+
+### Get Available Updates
+
+```
+GET /marketplace/updates
+```
+
+**Auth Required:** Yes (JWT)
+
+Returns installed plugins that have a newer version available on the marketplace.
+
+**Response:**
+
+```json
+[
+  {
+    "installedPluginId": "uuid",
+    "pluginId": "my-plugin",
+    "marketplacePluginId": "uuid",
+    "latestVersion": "1.2.0",
+    "currentVersion": "1.0.0",
+    "changelog": "Added new AI features, fixed bug Y"
+  }
+]
+```
+
+### Mark Plugin as Updated
+
+```
+PATCH /marketplace/updates/:installedPluginId/mark-updated
+```
+
+**Auth Required:** Yes (JWT)
+
+Called after a plugin upgrade completes successfully to clear the pending update flag.
+
 **Request Body:**
 
 ```json
-{
-  "reason": "Theme preview image is missing."
-}
+{ "newVersion": "1.2.0" }
+```
+
+**Response:**
+
+```json
+{ "success": true }
 ```
 
 ---
