@@ -1,12 +1,23 @@
 {
+<<<<<<< Updated upstream
   "name": "@agentbase/plugin-{{PLUGIN_SLUG}}",
   "version": "{{PLUGIN_VERSION}}",
   "description": "TODO: Describe your plugin",
+=======
+  "name": "@agentbase/plugin-template",
+  "version": "0.0.0",
+  "description": "Template for building Agentbase plugins — copy this directory to get started",
+  "private": true,
+>>>>>>> Stashed changes
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "license": "GPL-3.0-or-later",
   "scripts": {
+<<<<<<< Updated upstream
     "build": "tsc",
+=======
+    "build": "tsc --noEmit",
+>>>>>>> Stashed changes
     "test": "jest --passWithNoTests",
     "test:cov": "jest --coverage --passWithNoTests"
   },
@@ -22,9 +33,13 @@
   "jest": {
     "preset": "ts-jest",
     "testEnvironment": "node",
+<<<<<<< Updated upstream
     "testMatch": [
       "**/__tests__/**/*.test.ts"
     ],
+=======
+    "testMatch": ["**/__tests__/**/*.test.ts"],
+>>>>>>> Stashed changes
     "globals": {
       "ts-jest": {
         "tsconfig": "./tsconfig.test.json"

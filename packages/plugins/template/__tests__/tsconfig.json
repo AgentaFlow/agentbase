@@ -2,6 +2,7 @@
   "extends": "../tsconfig.json",
   "compilerOptions": {
     "noEmit": true,
+<<<<<<< Updated upstream
     "rootDir": "../../..",
     "baseUrl": "..",
     "lib": ["ES2022", "DOM"],
@@ -11,5 +12,12 @@
     }
   },
   "include": ["**/*.ts", "../src/**/*.ts"],
+=======
+    "rootDir": "../..",
+    "lib": ["ES2022", "DOM"],
+    "types": ["jest"]
+  },
+  "include": ["**/*.ts", "../src/**/*.ts", "../../../sdk/src/**/*.ts"],
+>>>>>>> Stashed changes
   "exclude": ["node_modules"]
 }

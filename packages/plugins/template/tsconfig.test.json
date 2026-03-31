@@ -2,11 +2,15 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "rootDir": ".",
+<<<<<<< Updated upstream
     "baseUrl": ".",
     "types": ["jest"],
     "paths": {
       "@agentbase/plugin-sdk": ["../sdk/src/index.ts"]
     }
+=======
+    "types": ["jest"]
+>>>>>>> Stashed changes
   },
   "include": ["src/**/*", "__tests__/**/*"],
   "exclude": ["node_modules", "dist"]
