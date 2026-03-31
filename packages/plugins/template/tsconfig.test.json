@@ -2,7 +2,11 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "rootDir": ".",
-    "types": ["jest"]
+    "baseUrl": ".",
+    "types": ["jest"],
+    "paths": {
+      "@agentbase/plugin-sdk": ["../sdk/src/index.ts"]
+    }
   },
   "include": ["src/**/*", "__tests__/**/*"],
   "exclude": ["node_modules", "dist"]

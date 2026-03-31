@@ -6,7 +6,11 @@
  * @package @agentbase/plugin-{{PLUGIN_SLUG}}
  * @version {{PLUGIN_VERSION}}
  */
+<<<<<<< Updated upstream
 import { createPlugin, PluginContext } from "../../sdk/src";
+=======
+import { createPlugin, PluginContext } from "@agentbase/plugin-sdk";
+>>>>>>> Stashed changes
 
 export default createPlugin({
   name: "{{PLUGIN_SLUG}}",

@@ -9,7 +9,11 @@
  *   import { createMockPluginAPI, createMockHookEngine } from '../../test-utils';
  */
 import plugin from "../src/index";
+<<<<<<< Updated upstream
 import { PluginContext, PluginAPI } from "../../sdk/src";
+=======
+import { PluginContext, PluginAPI } from "@agentbase/plugin-sdk";
+>>>>>>> Stashed changes
 
 // ── Inline mock (remove once Step 0.3 test-utils are available) ───────────────
 
