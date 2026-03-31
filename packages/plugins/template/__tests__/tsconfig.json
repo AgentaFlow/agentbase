@@ -7,7 +7,7 @@
     "lib": ["ES2022", "DOM"],
     "types": ["jest"],
     "paths": {
-      "@agentbase/plugin-sdk": ["sdk/src/index.ts"]
+      "@agentbase/plugin-sdk": ["../sdk/src/index.ts"]
     }
   },
   "include": ["**/*.ts", "../src/**/*.ts"],
