@@ -3,15 +3,12 @@
   "compilerOptions": {
     "noEmit": true,
     "rootDir": "../../..",
+    "baseUrl": "..",
     "lib": ["ES2022", "DOM"],
-<<<<<<< Updated upstream
-    "types": ["jest"]
-=======
     "types": ["jest"],
     "paths": {
-      "@agentbase/plugin-sdk": ["../sdk/src/index.ts"]
+      "@agentbase/plugin-sdk": ["sdk/src/index.ts"]
     }
->>>>>>> Stashed changes
   },
   "include": ["**/*.ts", "../src/**/*.ts"],
   "exclude": ["node_modules"]
