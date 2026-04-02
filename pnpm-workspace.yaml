@@ -1,3 +1,5 @@
 packages:
-  - 'packages/*'
-  - 'docs'
+  - "packages/*"
+  - "packages/plugins/*"
+  - "packages/plugins/official/*"
+  - "docs"

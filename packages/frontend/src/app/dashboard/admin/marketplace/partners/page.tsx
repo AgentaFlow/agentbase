@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useAuth } from "@/context/auth-context";
+import api from "@/lib/api";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -60,7 +61,8 @@ async function fetchVerifyBadge(installationId: string): Promise<VerifyResult> {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function PartnerAdminPage() {
-  const { token } = useAuth();
+  useAuth();
+  const token = api.getToken();
 
   // Onboarding form state
   const [form, setForm] = useState<OnboardForm>({

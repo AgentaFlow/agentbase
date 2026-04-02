@@ -1,0 +1,10 @@
+{
+  "name": "{{PLUGIN_SLUG}}",
+  "version": "{{PLUGIN_VERSION}}",
+  "description": "TODO: Describe your plugin",
+  "entryPoint": "dist/index.js",
+  "author": "Your Name",
+  "agentbaseVersion": ">=1.0.0",
+  "permissions": [],
+  "peerDependencies": {}
+}
