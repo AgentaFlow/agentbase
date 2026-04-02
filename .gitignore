@@ -278,6 +278,10 @@ vite.config.ts.timestamp-*
 # Misc
 .cache
 .parcel-cache
+
+# Exceptions: frontend source lib must not be excluded by the Python lib/ rule above
+!packages/frontend/src/lib/
+!packages/frontend/src/lib/**
 .turbo
 
 # Storybook
