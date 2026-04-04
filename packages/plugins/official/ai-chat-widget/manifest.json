@@ -1,0 +1,10 @@
+{
+  "name": "ai-chat-widget",
+  "version": "1.0.0",
+  "description": "Embeddable chat interface with streaming, multi-model support, and session management.",
+  "entryPoint": "dist/index.js",
+  "author": "Agentbase Team",
+  "agentbaseVersion": ">=1.0.0",
+  "permissions": [],
+  "peerDependencies": {}
+}
