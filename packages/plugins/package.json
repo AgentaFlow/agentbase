@@ -4,6 +4,10 @@
   "description": "SDK for building Agentbase plugins",
   "main": "sdk/src/index.ts",
   "types": "sdk/src/index.ts",
+  "exports": {
+    ".": "./sdk/src/index.ts",
+    "./test-utils": "./test-utils/index.ts"
+  },
   "license": "GPL-3.0-or-later",
   "scripts": {
     "build": "tsc",
