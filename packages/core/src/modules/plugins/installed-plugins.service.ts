@@ -40,7 +40,7 @@ export class InstalledPluginsService {
     applicationId: string,
     pluginId: string,
     ownerId: string,
-  ): Promise<InstalledPlugin> {
+  ): Promise<InstalledPlugin & { peerWarnings: string[] }> {
     // Verify app ownership
     const app = await this.appRepo.findOne({
       where: { id: applicationId, ownerId },
@@ -97,8 +97,31 @@ export class InstalledPluginsService {
       pluginId,
     });
 
+    // Peer dependency check (warning-only, never throws or blocks)
+    const peerDeps = plugin.manifest?.peerDependencies ?? {};
+    const peerWarnings: string[] = [];
+    if (Object.keys(peerDeps).length > 0) {
+      const activeInstalled = await this.installedRepo.find({
+        where: { applicationId, status: InstalledPluginStatus.ACTIVE },
+        relations: ["plugin"],
+      });
+      const activeSlugs = new Set(
+        activeInstalled.map((i) => i.plugin?.slug).filter(Boolean),
+      );
+      for (const peerSlug of Object.keys(peerDeps)) {
+        if (!activeSlugs.has(peerSlug)) {
+          peerWarnings.push(peerSlug);
+        }
+      }
+      if (peerWarnings.length > 0) {
+        this.logger.warn(
+          `Plugin "${plugin.name}" installed on app "${app.name}" with missing peer plugins: ${peerWarnings.join(", ")}`,
+        );
+      }
+    }
+
     this.logger.log(`Plugin ${plugin.name} installed on app ${app.name}`);
-    return result;
+    return { ...result, peerWarnings };
   }
 
   async uninstall(

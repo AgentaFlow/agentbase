@@ -28,6 +28,8 @@ export interface PluginManifest {
   author?: string;
   permissions?: string[];
   dependencies?: Record<string, string>;
+  /** Slugs of plugins this plugin works best alongside. Missing peers trigger a warning but never block install. */
+  peerDependencies?: Record<string, string>;
 }
 
 export interface PluginContext {

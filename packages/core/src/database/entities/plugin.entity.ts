@@ -43,6 +43,7 @@ export class Plugin {
     hooks?: string[];
     permissions?: string[];
     dependencies?: Record<string, string>;
+    peerDependencies?: Record<string, string>;
     settings?: Record<string, any>;
     entryPoint?: string;
   };
