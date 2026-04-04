@@ -15,6 +15,10 @@ import {
 } from "../../database/entities";
 import { HookEngine } from "../hooks/hook.engine";
 import { LicenseValidatorService } from "../marketplace/license-validator.service";
+import {
+  encryptSetting,
+  decryptSetting,
+} from "./engine/plugin-settings-crypto";
 
 @Injectable()
 export class InstalledPluginsService {
@@ -167,8 +171,57 @@ export class InstalledPluginsService {
     settings: Record<string, any>,
   ): Promise<InstalledPlugin> {
     const installed = await this.getInstalled(applicationId, pluginId, ownerId);
-    installed.settings = { ...installed.settings, ...settings };
+
+    const plugin = await this.pluginRepo.findOne({ where: { id: pluginId } });
+    const settingDefs = plugin?.manifest?.settings ?? {};
+
+    const encryptedSettings: Record<string, any> = {};
+    for (const [key, value] of Object.entries(settings)) {
+      const def = settingDefs[key];
+      if (def?.encrypted === true && typeof value === "string") {
+        encryptedSettings[key] = encryptSetting(value);
+      } else {
+        encryptedSettings[key] = value;
+      }
+    }
+
+    installed.settings = { ...installed.settings, ...encryptedSettings };
     return this.installedRepo.save(installed);
+  }
+
+  /**
+   * Returns the plugin's settings with encrypted fields decrypted.
+   * Use this when constructing a PluginContext so plugins receive plaintext values.
+   */
+  async getSettingsForContext(
+    applicationId: string,
+    pluginId: string,
+  ): Promise<Record<string, any>> {
+    const installed = await this.installedRepo.findOne({
+      where: { applicationId, pluginId },
+    });
+    if (!installed) return {};
+
+    const plugin = await this.pluginRepo.findOne({ where: { id: pluginId } });
+    const settingDefs = plugin?.manifest?.settings ?? {};
+
+    const result: Record<string, any> = {};
+    for (const [key, value] of Object.entries(installed.settings ?? {})) {
+      const def = settingDefs[key];
+      if (def?.encrypted === true && typeof value === "string") {
+        try {
+          result[key] = decryptSetting(value);
+        } catch {
+          this.logger.warn(
+            `Failed to decrypt setting "${key}" for plugin ${pluginId}`,
+          );
+          result[key] = value;
+        }
+      } else {
+        result[key] = value;
+      }
+    }
+    return result;
   }
 
   async getInstalledPlugins(
