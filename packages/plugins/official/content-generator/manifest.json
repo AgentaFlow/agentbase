@@ -1,0 +1,10 @@
+{
+  "name": "content-generator",
+  "version": "1.0.0",
+  "description": "AI-powered content creation with 50+ prompt templates for blog posts, emails, social copy, and more.",
+  "entryPoint": "dist/index.js",
+  "author": "Agentbase Team",
+  "agentbaseVersion": ">=1.0.0",
+  "permissions": [],
+  "peerDependencies": {}
+}
