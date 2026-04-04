@@ -196,6 +196,7 @@ export interface PluginDefinition {
       label: string;
       default?: any;
       options?: string[];
+      encrypted?: true;
     }
   >;
   /** Custom API endpoints registered by this plugin. */
