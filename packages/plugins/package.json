@@ -12,7 +12,12 @@
   "scripts": {
     "build": "tsc",
     "build:plugin": "ts-node --project tsconfig.json scripts/build-plugin.ts",
-    "build:plugins": "ts-node --project tsconfig.json scripts/build-plugin.ts --all"
+    "build:plugins": "ts-node --project tsconfig.json scripts/build-plugin.ts --all",
+    "plugin:create": "ts-node --project tsconfig.json scripts/create-plugin.ts",
+    "plugin:build": "ts-node --project tsconfig.json scripts/build-plugin.ts",
+    "plugin:build-all": "ts-node --project tsconfig.json scripts/build-plugin.ts --all",
+    "plugin:test": "ts-node --project tsconfig.json scripts/test-plugin.ts",
+    "plugin:test-all": "ts-node --project tsconfig.json scripts/test-plugin.ts --all"
   },
   "devDependencies": {
     "@types/adm-zip": "^0.5.8",
