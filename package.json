@@ -13,6 +13,7 @@
     "build": "pnpm -r build",
     "build:core": "pnpm --filter @agentbase/core build",
     "build:frontend": "pnpm --filter @agentbase/frontend build",
+    "build:plugins": "pnpm --filter @agentbase/plugin-sdk build:plugins",
     "test": "pnpm -r test",
     "test:core": "pnpm --filter @agentbase/core test",
     "lint": "pnpm -r lint",
