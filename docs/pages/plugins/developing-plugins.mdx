@@ -1,0 +1,476 @@
+# Developing Plugins
+
+This guide covers everything you need to build, test, and submit a first-class
+Agentbase plugin — from scaffolding through marketplace submission.
+
+---
+
+## Prerequisites
+
+- Node.js 20+ and pnpm 9+
+- TypeScript 5+
+- An Agentbase instance running locally (`docker compose up -d && pnpm start:dev`)
+
+---
+
+## Plugin Lifecycle
+
+Every plugin moves through five stages managed by the platform:
+
+| Stage          | Trigger                            | Hook fired          |
+| -------------- | ---------------------------------- | ------------------- |
+| **Install**    | User installs from marketplace     | —                   |
+| **Activate**   | User enables the plugin for an app | `plugin:activate`   |
+| **Init**       | App boots with plugin active       | `app:init`          |
+| **Deactivate** | User disables the plugin           | `plugin:deactivate` |
+| **Uninstall**  | User removes the plugin            | —                   |
+
+On each app boot the `app:init` hook fires in dependency order. Use it to
+register endpoints, cron jobs, and webhooks — not `plugin:activate`, which only
+fires once on the initial enable.
+
+---
+
+## Quick Start
+
+```bash
+# From the agentbase repo root
+cp -r packages/plugins/examples/hello-world packages/plugins/official/my-plugin
+cd packages/plugins/official/my-plugin
+pnpm install
+```
+
+Minimal file tree:
+
+```
+my-plugin/
+├── manifest.json          # Platform metadata
+├── package.json           # npm manifest + jest config
+├── tsconfig.json          # TypeScript config
+├── src/
+│   └── index.ts           # Plugin entry point
+└── __tests__/
+    ├── tsconfig.json      # Test-specific tsconfig
+    └── index.test.ts      # Unit tests
+```
+
+---
+
+## manifest.json
+
+The manifest is validated by the platform's scanning service before a
+submission can be approved. All fields except `main`/`entryPoint` are optional,
+but completing them improves discoverability.
+
+```json
+{
+  "name": "my-plugin",
+  "version": "1.0.0",
+  "description": "A short description shown in the marketplace.",
+  "author": "Your Name",
+  "license": "GPL-3.0",
+  "main": "dist/index.js",
+  "agentbase": {
+    "type": "plugin",
+    "apiVersion": "1"
+  },
+  "permissions": ["db:readwrite", "network:external"],
+  "hooks": ["app:init", "conversation:end"],
+  "filters": ["response:modify"],
+  "endpoints": [
+    { "method": "POST", "path": "/my-action" },
+    { "method": "GET", "path": "/my-data" }
+  ],
+  "settings": [
+    {
+      "key": "apiKey",
+      "type": "string",
+      "label": "External Service API Key",
+      "encrypted": true
+    },
+    {
+      "key": "enableFeature",
+      "type": "boolean",
+      "label": "Enable optional feature",
+      "default": true
+    },
+    {
+      "key": "model",
+      "type": "select",
+      "label": "AI model to use",
+      "options": ["gpt-4o-mini", "gpt-4o", "claude-3-5-haiku"],
+      "default": "gpt-4o-mini"
+    }
+  ],
+  "peerDependencies": {
+    "conversation-memory": "*"
+  }
+}
+```
+
+### Permissions
+
+| Permission         | What it grants                                         |
+| ------------------ | ------------------------------------------------------ |
+| `db:readwrite`     | Read and write the plugin's scoped KV store            |
+| `db:readonly`      | Read-only access to the plugin's KV store              |
+| `network:external` | `makeRequest` calls to external URLs                   |
+| `network:internal` | `makeRequest` calls to the platform's own internal API |
+
+---
+
+## src/index.ts
+
+Every plugin exports a default `AgentbasePlugin` created with `createPlugin()`:
+
+```typescript
+import { createPlugin, PluginContext } from "@agentbase/plugin-sdk";
+
+export default createPlugin({
+  name: "my-plugin",
+  version: "1.0.0",
+  description: "Does something useful.",
+  permissions: ["db:readwrite"],
+
+  settings: {
+    enableFeature: {
+      type: "boolean",
+      label: "Enable optional feature",
+      default: true,
+    },
+  },
+
+  hooks: {
+    "app:init": async (ctx: PluginContext) => {
+      // Register endpoints, cron jobs, etc.
+      ctx.api.registerEndpoint({
+        method: "GET",
+        path: "/status",
+        auth: true,
+        handler: async (_req, res) => {
+          res.status(200).json({ ok: true });
+        },
+      });
+    },
+
+    "conversation:end": async (ctx: PluginContext) => {
+      const conversationId = (ctx as unknown as Record<string, unknown>)[
+        "conversationId"
+      ] as string | undefined;
+      if (!conversationId) return;
+      await ctx.api.db.set(`log:${conversationId}`, { at: Date.now() });
+    },
+  },
+
+  filters: {
+    "response:modify": async (_ctx: PluginContext, response: unknown) => {
+      return { ...(response as object), _myPluginActive: true };
+    },
+  },
+});
+```
+
+---
+
+## Available Hooks
+
+Hooks fire at specific platform events. The callback receives a `PluginContext`.
+
+| Hook                         | When it fires                    | Notes                                     |
+| ---------------------------- | -------------------------------- | ----------------------------------------- |
+| `app:init`                   | App boots (plugin active)        | Register endpoints / cron / webhooks here |
+| `conversation:start`         | New conversation created         | Context includes `conversationId`         |
+| `conversation:end`           | Conversation finishes            | Context includes `conversationId`         |
+| `conversation:beforeMessage` | Before user message is processed | Inject context into prompts               |
+| `plugin:activate`            | Plugin first enabled             | One-time setup                            |
+| `plugin:deactivate`          | Plugin disabled                  | Cleanup                                   |
+| `user:login`                 | User authenticates               | Context includes `userId`                 |
+| `user:register`              | New user registers               | Context includes `userId`                 |
+
+> **Note:** `conversationId` is not a typed field on `PluginContext` — access it
+> via `(ctx as unknown as Record<string, unknown>)["conversationId"]`.
+
+---
+
+## Available Filters
+
+Filters intercept and transform a value. Return the (optionally modified) value.
+
+| Filter                 | Input type           | Use case                              |
+| ---------------------- | -------------------- | ------------------------------------- |
+| `response:modify`      | AI response object   | Inject metadata flags, append content |
+| `prompt:modify`        | System prompt string | Prepend instructions, inject context  |
+| `message:beforeSend`   | User message string  | Sanitise, redact PII                  |
+| `message:afterReceive` | AI response string   | Post-process, translate               |
+
+```typescript
+filters: {
+  "prompt:modify": async (_ctx, prompt: string) => {
+    return `${prompt}\n\nAlways respond in English.`;
+  },
+},
+```
+
+---
+
+## Plugin API (`ctx.api`)
+
+The `PluginAPI` surface is injected at runtime and gives access to:
+
+### Database (`ctx.api.db`)
+
+Scoped key-value store backed by MongoDB. Keys are namespaced per plugin + app,
+so two plugins can never read each other's data.
+
+```typescript
+await ctx.api.db.set("user:42:prefs", { theme: "dark" });
+const prefs = await ctx.api.db.get("user:42:prefs");
+const keys = await ctx.api.db.keys("user:"); // prefix scan
+await ctx.api.db.delete("user:42:prefs");
+```
+
+### Configuration (`ctx.api.getConfig` / `setConfig`)
+
+Read and update user-configured settings at runtime:
+
+```typescript
+const apiKey = ctx.api.getConfig("apiKey") as string;
+await ctx.api.setConfig("lastSync", new Date().toISOString());
+```
+
+Encrypted settings (`"encrypted": true` in manifest) are decrypted
+transparently — the value returned by `getConfig` is the plaintext string.
+
+### External requests (`ctx.api.makeRequest`)
+
+A `fetch`-compatible function for authenticated outbound calls. All requests
+are logged and rate-limited per plugin.
+
+```typescript
+const res = await ctx.api.makeRequest("https://api.example.com/data", {
+  method: "POST",
+  headers: {
+    Authorization: `Bearer ${apiKey}`,
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({ query: "hello" }),
+});
+if (!res.ok) throw new Error(`API error ${res.status}`);
+const data = await res.json();
+```
+
+To call the platform's own internal AI service:
+
+```typescript
+const res = await ctx.api.makeRequest("/api/v1/internal/ai/completions", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    model: "gpt-4o-mini",
+    messages: [{ role: "user", content: "Summarise this: ..." }],
+  }),
+});
+```
+
+### Registering endpoints (`ctx.api.registerEndpoint`)
+
+Call this inside `app:init`. Endpoints are mounted at
+`/api/plugins/{pluginId}/endpoints/{path}`.
+
+```typescript
+ctx.api.registerEndpoint({
+  method: "POST",
+  path: "/summarise",
+  auth: true, // requires a valid JWT; set false for public endpoints
+  description: "Summarise a block of text using AI.",
+  handler: async (req, res) => {
+    const { text } = req.body as { text?: string };
+    if (!text) {
+      res.status(400).json({ error: "text is required" });
+      return;
+    }
+    // ... process and respond
+    res.status(200).json({ summary: "..." });
+  },
+});
+```
+
+### Registering cron jobs (`ctx.api.registerCronJob`)
+
+```typescript
+ctx.api.registerCronJob({
+  name: "nightly-sync",
+  schedule: "0 2 * * *", // 02:00 UTC daily
+  handler: async (ctx) => {
+    // background work
+  },
+});
+```
+
+---
+
+## Settings Encryption
+
+Mark sensitive settings `encrypted: true` in both `manifest.json` and your
+`createPlugin` settings block:
+
+```json
+// manifest.json
+{
+  "key": "stripeSecretKey",
+  "type": "string",
+  "label": "Stripe Secret Key",
+  "encrypted": true
+}
+```
+
+```typescript
+// src/index.ts
+settings: {
+  stripeSecretKey: { type: "string", label: "Stripe Secret Key", encrypted: true },
+}
+```
+
+The platform stores the value AES-256-GCM encrypted. When your plugin reads it
+via `ctx.api.getConfig("stripeSecretKey")`, it receives the decrypted plaintext.
+
+---
+
+## Peer Dependencies
+
+Declare optional but recommended sibling plugins in `manifest.json`:
+
+```json
+"peerDependencies": {
+  "conversation-memory": "*",
+  "analytics-dashboard": ">=1.0.0"
+}
+```
+
+- A warning (never a hard error) is shown if a peer is absent during install.
+- Your plugin must still function when peers are not present.
+- Access peer data only via the event bus (`ctx.api.events`) — never rely on
+  internal implementation details of another plugin.
+
+### Cross-plugin events
+
+```typescript
+// Emitting
+await ctx.api.events.emit("my-plugin:item-created", { id: "123" });
+
+// Listening (inside app:init)
+ctx.api.events.on("other-plugin:event", async (data) => {
+  await ctx.api.db.set(`cache:${data.id}`, data);
+});
+```
+
+---
+
+## Build & Test Scripts
+
+All first-party plugins share the same toolchain.
+
+```bash
+# From the plugin directory (packages/plugins/official/<slug>/)
+npm run build       # tsc → dist/
+npm test            # jest (runs __tests__/*.test.ts)
+npm run test:cov    # jest --coverage (target ≥80%)
+```
+
+From the monorepo root:
+
+```bash
+pnpm --filter "@agentbase/plugin-<slug>" test
+pnpm --filter "./packages/plugins/official/*" test   # all plugins
+```
+
+### Test harness pattern
+
+```typescript
+import plugin, { buildMyKey } from "../src/index";
+import {
+  PluginAPI,
+  PluginDatabaseAPI,
+  PluginEventBus,
+  EndpointDefinition,
+} from "@agentbase/plugin-sdk";
+
+function createMockAPI(
+  configOverrides: Record<string, unknown> = {},
+): PluginAPI & { _endpoints: EndpointDefinition[] } {
+  const store = new Map<string, unknown>();
+  const _endpoints: EndpointDefinition[] = [];
+  const defaults = new Map<string, unknown>([
+    ["mySetting", "default-value"],
+    ...Object.entries(configOverrides),
+  ]);
+
+  const db: PluginDatabaseAPI = {
+    set: jest.fn().mockImplementation(async (k, v) => store.set(k, v)),
+    get: jest.fn().mockImplementation(async (k) => store.get(k) ?? null),
+    delete: jest.fn().mockImplementation(async (k) => {
+      store.delete(k);
+      return true;
+    }),
+    keys: jest
+      .fn()
+      .mockImplementation(async (prefix?: string) =>
+        [...store.keys()].filter((k) => !prefix || k.startsWith(prefix)),
+      ),
+    find: jest.fn().mockResolvedValue([]),
+    count: jest.fn().mockResolvedValue(0),
+  };
+
+  return {
+    _endpoints,
+    getConfig: jest.fn().mockImplementation((k: string) => defaults.get(k)),
+    setConfig: jest.fn().mockImplementation(async (k, v) => defaults.set(k, v)),
+    makeRequest: jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: jest.fn().mockResolvedValue({}),
+      text: jest.fn().mockResolvedValue(""),
+    }),
+    log: jest.fn(),
+    db,
+    events: {
+      emit: jest.fn().mockResolvedValue(undefined),
+      on: jest.fn(),
+      off: jest.fn(),
+    },
+    registerEndpoint: jest.fn().mockImplementation((d) => _endpoints.push(d)),
+    registerCronJob: jest.fn(),
+    registerWebhook: jest.fn(),
+    registerAdminPage: jest.fn(),
+  } as unknown as PluginAPI & { _endpoints: EndpointDefinition[] };
+}
+```
+
+---
+
+## Submission Checklist
+
+Before submitting to the marketplace, verify every item:
+
+- [ ] `manifest.json` has `name`, `version`, `description`, and `main`
+- [ ] All required settings declared in both `manifest.json` and `createPlugin`
+- [ ] Sensitive settings have `"encrypted": true`
+- [ ] Peer dependencies listed in `manifest.json` `peerDependencies`
+- [ ] `npm test` passes with ≥80% coverage
+- [ ] No `eval()`, `exec()`, or `child_process` usage (auto-rejected by scanner)
+- [ ] File size ≤ 50 MB as a ZIP archive
+- [ ] ZIP contains exactly one `manifest.json` at the root
+- [ ] All external HTTP calls use `ctx.api.makeRequest`, not raw `fetch`/`axios`
+- [ ] Plugin degrades gracefully when optional peer plugins are absent
+- [ ] No bare `process.env` access — use `ctx.api.getConfig` for all settings
+- [ ] README describes every endpoint, setting, and hook the plugin uses
+
+### Building the ZIP
+
+```bash
+# From the plugin directory
+npm run build
+zip -r ../my-plugin-1.0.0.zip dist/ manifest.json package.json README.md
+```
+
+Submit the ZIP via the developer portal at `marketplace.agentbase.dev`.
