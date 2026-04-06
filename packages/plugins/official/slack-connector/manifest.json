@@ -1,0 +1,10 @@
+{
+  "name": "slack-connector",
+  "version": "1.0.0",
+  "description": "Connect your Agentbase AI to Slack — @mentions, slash commands, and AI-powered channel responses.",
+  "entryPoint": "dist/index.js",
+  "author": "Agentbase Team",
+  "agentbaseVersion": ">=1.0.0",
+  "permissions": ["network:external", "db:readwrite"],
+  "peerDependencies": {}
+}
