@@ -249,9 +249,11 @@ export async function generateEmailCopy(
   if (!response.ok) throw new Error(`AI service error: ${response.status}`);
 
   const data = (await response.json()) as Record<string, unknown>;
-  const choices = data["choices"] as Array<{
-    message: { content: string };
-  }> | undefined;
+  const choices = data["choices"] as
+    | Array<{
+        message: { content: string };
+      }>
+    | undefined;
 
   if (choices?.[0]?.message?.content) return choices[0].message.content;
   if (typeof data["content"] === "string") return data["content"] as string;
@@ -295,8 +297,7 @@ export async function advanceDripSubscribers(
     if (!template) continue;
 
     const subject =
-      step.subject ??
-      interpolate(template.subject, { email: state.email });
+      step.subject ?? interpolate(template.subject, { email: state.email });
     const html = interpolate(template.body, { email: state.email });
 
     try {
@@ -422,15 +423,14 @@ export default createPlugin({
         auth: true,
         description: "Send a transactional email",
         handler: async (req, res) => {
-          const { to, subject, html, text, templateSlug, vars } =
-            req.body as {
-              to?: string;
-              subject?: string;
-              html?: string;
-              text?: string;
-              templateSlug?: string;
-              vars?: Record<string, string>;
-            };
+          const { to, subject, html, text, templateSlug, vars } = req.body as {
+            to?: string;
+            subject?: string;
+            html?: string;
+            text?: string;
+            templateSlug?: string;
+            vars?: Record<string, string>;
+          };
 
           if (!to) {
             res.status(400).json({ error: "`to` is required" });
@@ -473,7 +473,9 @@ export default createPlugin({
               { to, subject: finalSubject, html: finalHtml, text },
             );
             await api.db.set(buildSentKey(receipt.messageId), receipt);
-            res.status(200).json({ success: true, messageId: receipt.messageId });
+            res
+              .status(200)
+              .json({ success: true, messageId: receipt.messageId });
           } catch (err) {
             res.status(500).json({ error: (err as Error).message });
           }
@@ -585,9 +587,7 @@ export default createPlugin({
             req.body as Partial<DripCampaign>;
 
           if (!name || !steps || steps.length === 0) {
-            res
-              .status(400)
-              .json({ error: "name and steps[] are required" });
+            res.status(400).json({ error: "name and steps[] are required" });
             return;
           }
 
@@ -708,7 +708,9 @@ export default createPlugin({
             completed: campaign.steps.length === 0,
           };
           await api.db.set(subKey, state);
-          res.status(201).json({ subscribed: true, nextSendAt: state.nextSendAt });
+          res
+            .status(201)
+            .json({ subscribed: true, nextSendAt: state.nextSendAt });
         },
       });
 

@@ -118,7 +118,13 @@ type MockCtx = PluginContext & { api: MockAPI };
 
 function makeCtx(overrides: Partial<PluginContext> = {}): MockCtx {
   const api = createMockAPI();
-  return { appId: "app-1", userId: "user-1", config: {}, api, ...overrides } as MockCtx;
+  return {
+    appId: "app-1",
+    userId: "user-1",
+    config: {},
+    api,
+    ...overrides,
+  } as MockCtx;
 }
 
 interface MockRes {
@@ -212,9 +218,7 @@ describe("interpolate", () => {
   });
 
   it("replaces multiple variables", () => {
-    expect(
-      interpolate("{{a}} + {{b}}", { a: "1", b: "2" }),
-    ).toBe("1 + 2");
+    expect(interpolate("{{a}} + {{b}}", { a: "1", b: "2" })).toBe("1 + 2");
   });
 
   it("replaces same variable multiple times", () => {
@@ -279,14 +283,16 @@ describe("sendViaResend", () => {
 
   it("formats from address with name", async () => {
     let capturedBody: string | undefined;
-    const mockMake = jest.fn().mockImplementation(async (_url: string, opts?: RequestInit) => {
-      capturedBody = opts?.body as string;
-      return {
-        ok: true,
-        status: 200,
-        json: jest.fn().mockResolvedValue({ id: "id1" }),
-      };
-    });
+    const mockMake = jest
+      .fn()
+      .mockImplementation(async (_url: string, opts?: RequestInit) => {
+        capturedBody = opts?.body as string;
+        return {
+          ok: true,
+          status: 200,
+          json: jest.fn().mockResolvedValue({ id: "id1" }),
+        };
+      });
 
     await sendViaResend(mockMake, "k", "f@e.com", "My Name", {
       to: "t@e.com",
@@ -300,14 +306,16 @@ describe("sendViaResend", () => {
 
   it("formats from address without name", async () => {
     let capturedBody: string | undefined;
-    const mockMake = jest.fn().mockImplementation(async (_url: string, opts?: RequestInit) => {
-      capturedBody = opts?.body as string;
-      return {
-        ok: true,
-        status: 200,
-        json: jest.fn().mockResolvedValue({ id: "id2" }),
-      };
-    });
+    const mockMake = jest
+      .fn()
+      .mockImplementation(async (_url: string, opts?: RequestInit) => {
+        capturedBody = opts?.body as string;
+        return {
+          ok: true,
+          status: 200,
+          json: jest.fn().mockResolvedValue({ id: "id2" }),
+        };
+      });
 
     await sendViaResend(mockMake, "k", "f@e.com", "", {
       to: "t@e.com",
@@ -376,7 +384,12 @@ describe("sendEmail", () => {
       json: jest.fn().mockResolvedValue({ id: "r1" }),
     });
     const receipt = await sendEmail(
-      { provider: "resend", apiKey: "key", fromAddress: "f@e.com", fromName: "" },
+      {
+        provider: "resend",
+        apiKey: "key",
+        fromAddress: "f@e.com",
+        fromName: "",
+      },
       mockMake,
       { to: "t@e.com", subject: "S", html: "<p>H</p>" },
     );
@@ -387,7 +400,12 @@ describe("sendEmail", () => {
   it("routes to SendGrid when provider=sendgrid", async () => {
     const mockMake = jest.fn().mockResolvedValue({ ok: true, status: 202 });
     const receipt = await sendEmail(
-      { provider: "sendgrid", apiKey: "sgkey", fromAddress: "f@e.com", fromName: "" },
+      {
+        provider: "sendgrid",
+        apiKey: "sgkey",
+        fromAddress: "f@e.com",
+        fromName: "",
+      },
       mockMake,
       { to: "t@e.com", subject: "S", html: "<p>H</p>" },
     );
@@ -439,11 +457,9 @@ describe("generateEmailCopy", () => {
     const mockMake = jest.fn().mockResolvedValue({
       ok: true,
       status: 200,
-      json: jest
-        .fn()
-        .mockResolvedValue({
-          choices: [{ message: { content: "<p>Generated copy</p>" } }],
-        }),
+      json: jest.fn().mockResolvedValue({
+        choices: [{ message: { content: "<p>Generated copy</p>" } }],
+      }),
     });
     const result = await generateEmailCopy(mockMake, "Write a welcome email");
     expect(result).toBe("<p>Generated copy</p>");
@@ -483,14 +499,18 @@ describe("generateEmailCopy", () => {
 
   it("passes the model parameter to the AI service", async () => {
     let capturedBody: string | undefined;
-    const mockMake = jest.fn().mockImplementation(async (_url: string, opts?: RequestInit) => {
-      capturedBody = opts?.body as string;
-      return {
-        ok: true,
-        status: 200,
-        json: jest.fn().mockResolvedValue({ choices: [{ message: { content: "ok" } }] }),
-      };
-    });
+    const mockMake = jest
+      .fn()
+      .mockImplementation(async (_url: string, opts?: RequestInit) => {
+        capturedBody = opts?.body as string;
+        return {
+          ok: true,
+          status: 200,
+          json: jest
+            .fn()
+            .mockResolvedValue({ choices: [{ message: { content: "ok" } }] }),
+        };
+      });
     await generateEmailCopy(mockMake, "prompt", "claude-3-5-sonnet");
     const body = JSON.parse(capturedBody ?? "{}") as Record<string, unknown>;
     expect(body["model"]).toBe("claude-3-5-sonnet");
@@ -521,15 +541,15 @@ describe("SYSTEM_TEMPLATES", () => {
 
 describe("plugin manifest / settings", () => {
   it("name is email-automation", () => {
-    expect((plugin.definition as unknown as Record<string, unknown>)["name"]).toBe(
-      "email-automation",
-    );
+    expect(
+      (plugin.definition as unknown as Record<string, unknown>)["name"],
+    ).toBe("email-automation");
   });
 
   it("version is 1.0.0", () => {
-    expect((plugin.definition as unknown as Record<string, unknown>)["version"]).toBe(
-      "1.0.0",
-    );
+    expect(
+      (plugin.definition as unknown as Record<string, unknown>)["version"],
+    ).toBe("1.0.0");
   });
 
   it("has required settings: provider, apiKey, fromAddress, fromName, sendSummaryOnEnd", () => {
@@ -542,12 +562,18 @@ describe("plugin manifest / settings", () => {
   });
 
   it("apiKey setting has encrypted:true", () => {
-    const settings = plugin.definition.settings as Record<string, Record<string, unknown>>;
+    const settings = plugin.definition.settings as Record<
+      string,
+      Record<string, unknown>
+    >;
     expect(settings["apiKey"]?.["encrypted"]).toBe(true);
   });
 
   it("provider setting has options resend and sendgrid", () => {
-    const settings = plugin.definition.settings as Record<string, Record<string, unknown>>;
+    const settings = plugin.definition.settings as Record<
+      string,
+      Record<string, unknown>
+    >;
     expect(settings["provider"]?.["options"]).toEqual(
       expect.arrayContaining(["resend", "sendgrid"]),
     );
@@ -611,7 +637,10 @@ describe("POST /send", () => {
   it("returns 400 when `to` is missing", async () => {
     const { ep } = await setup();
     const res = makeRes();
-    await ep.handler!(makeReq({ body: { subject: "S", html: "<p>H</p>" } }), res as unknown as EndpointResponse);
+    await ep.handler!(
+      makeReq({ body: { subject: "S", html: "<p>H</p>" } }),
+      res as unknown as EndpointResponse,
+    );
     expect(res._status).toBe(400);
     expect(res._body).toMatchObject({ error: expect.stringContaining("to") });
   });
@@ -619,7 +648,10 @@ describe("POST /send", () => {
   it("returns 400 when subject and html are both missing (no templateSlug)", async () => {
     const { ep } = await setup();
     const res = makeRes();
-    await ep.handler!(makeReq({ body: { to: "a@b.com" } }), res as unknown as EndpointResponse);
+    await ep.handler!(
+      makeReq({ body: { to: "a@b.com" } }),
+      res as unknown as EndpointResponse,
+    );
     expect(res._status).toBe(400);
   });
 
@@ -658,7 +690,9 @@ describe("POST /send", () => {
     const ep = getEndpoint(ctx.api, "POST", "/send");
     const res = makeRes();
     await ep.handler!(
-      makeReq({ body: { to: "u@b.com", templateSlug: "promo", vars: { name: "Bob" } } }),
+      makeReq({
+        body: { to: "u@b.com", templateSlug: "promo", vars: { name: "Bob" } },
+      }),
       res as unknown as EndpointResponse,
     );
 
@@ -708,7 +742,9 @@ describe("GET /templates", () => {
     expect(res._status).toBe(200);
     const body = res._body as { templates: EmailTemplate[] };
     expect(Array.isArray(body.templates)).toBe(true);
-    expect(body.templates.length).toBeGreaterThanOrEqual(SYSTEM_TEMPLATES.length);
+    expect(body.templates.length).toBeGreaterThanOrEqual(
+      SYSTEM_TEMPLATES.length,
+    );
   });
 });
 
@@ -857,7 +893,9 @@ describe("POST /campaign", () => {
     const ep = getEndpoint(ctx.api, "POST", "/campaign");
     const res = makeRes();
     await ep.handler!(
-      makeReq({ body: { steps: [{ delayHours: 0, templateSlug: "welcome" }] } }),
+      makeReq({
+        body: { steps: [{ delayHours: 0, templateSlug: "welcome" }] },
+      }),
       res as unknown as EndpointResponse,
     );
     expect(res._status).toBe(400);
@@ -1026,7 +1064,9 @@ describe("POST /campaign/:id/subscribe", () => {
       updatedAt: 1,
     };
     await ctx.api.db.set(buildCampaignKey("cmp_dup"), campaign);
-    await ctx.api.db.set(buildSubscriberKey("dup@e.com", "cmp_dup"), { existing: true });
+    await ctx.api.db.set(buildSubscriberKey("dup@e.com", "cmp_dup"), {
+      existing: true,
+    });
 
     const ep = getEndpoint(ctx.api, "POST", "/campaign/:id/subscribe");
     const res = makeRes();
@@ -1047,7 +1087,9 @@ describe("POST /generate", () => {
     (ctx.api.makeRequest as jest.Mock).mockResolvedValue({
       ok: true,
       status: 200,
-      json: jest.fn().mockResolvedValue({ choices: [{ message: { content: "<p>Generated</p>" } }] }),
+      json: jest.fn().mockResolvedValue({
+        choices: [{ message: { content: "<p>Generated</p>" } }],
+      }),
     });
     const ep = getEndpoint(ctx.api, "POST", "/generate");
     const res = makeRes();
@@ -1064,14 +1106,20 @@ describe("POST /generate", () => {
     await runInit(ctx);
     const ep = getEndpoint(ctx.api, "POST", "/generate");
     const res = makeRes();
-    await ep.handler!(makeReq({ body: {} }), res as unknown as EndpointResponse);
+    await ep.handler!(
+      makeReq({ body: {} }),
+      res as unknown as EndpointResponse,
+    );
     expect(res._status).toBe(400);
   });
 
   it("returns 500 on AI error", async () => {
     const ctx = makeCtx();
     await runInit(ctx);
-    (ctx.api.makeRequest as jest.Mock).mockResolvedValue({ ok: false, status: 502 });
+    (ctx.api.makeRequest as jest.Mock).mockResolvedValue({
+      ok: false,
+      status: 502,
+    });
     const ep = getEndpoint(ctx.api, "POST", "/generate");
     const res = makeRes();
     await ep.handler!(
@@ -1115,8 +1163,14 @@ describe("advanceDripSubscribers", () => {
     const ctx = makeCtx();
     const campaign = buildCampaign("cmp_adv");
     await ctx.api.db.set(buildCampaignKey("cmp_adv"), campaign);
-    await ctx.api.db.set(buildTemplateKey("step1-tpl"), buildTemplate("step1-tpl"));
-    await ctx.api.db.set(buildTemplateKey("step2-tpl"), buildTemplate("step2-tpl"));
+    await ctx.api.db.set(
+      buildTemplateKey("step1-tpl"),
+      buildTemplate("step1-tpl"),
+    );
+    await ctx.api.db.set(
+      buildTemplateKey("step2-tpl"),
+      buildTemplate("step2-tpl"),
+    );
 
     const sub: SubscriberState = {
       campaignId: "cmp_adv",
@@ -1159,7 +1213,10 @@ describe("advanceDripSubscribers", () => {
     const ctx = makeCtx();
     const campaign = buildCampaign("cmp_skip");
     await ctx.api.db.set(buildCampaignKey("cmp_skip"), campaign);
-    await ctx.api.db.set(buildTemplateKey("step1-tpl"), buildTemplate("step1-tpl"));
+    await ctx.api.db.set(
+      buildTemplateKey("step1-tpl"),
+      buildTemplate("step1-tpl"),
+    );
 
     const sub: SubscriberState = {
       campaignId: "cmp_skip",
@@ -1186,7 +1243,10 @@ describe("advanceDripSubscribers", () => {
       updatedAt: 1,
     };
     await ctx.api.db.set(buildCampaignKey("cmp_done"), singleStepCampaign);
-    await ctx.api.db.set(buildTemplateKey("step1-tpl"), buildTemplate("step1-tpl"));
+    await ctx.api.db.set(
+      buildTemplateKey("step1-tpl"),
+      buildTemplate("step1-tpl"),
+    );
 
     const sub: SubscriberState = {
       campaignId: "cmp_done",
@@ -1269,7 +1329,10 @@ describe("advanceDripSubscribers", () => {
     const ctx = makeCtx();
     const campaign = buildCampaign("cmp_err");
     await ctx.api.db.set(buildCampaignKey("cmp_err"), campaign);
-    await ctx.api.db.set(buildTemplateKey("step1-tpl"), buildTemplate("step1-tpl"));
+    await ctx.api.db.set(
+      buildTemplateKey("step1-tpl"),
+      buildTemplate("step1-tpl"),
+    );
 
     const sub: SubscriberState = {
       campaignId: "cmp_err",
@@ -1290,7 +1353,10 @@ describe("advanceDripSubscribers", () => {
       };
       return cfg[k];
     });
-    (ctx.api.makeRequest as jest.Mock).mockResolvedValue({ ok: false, status: 500 });
+    (ctx.api.makeRequest as jest.Mock).mockResolvedValue({
+      ok: false,
+      status: 500,
+    });
 
     const sent = await advanceDripSubscribers(ctx);
     expect(sent).toBe(0);
@@ -1360,9 +1426,16 @@ describe("user:register hook", () => {
     const ctx = makeCtx();
     await ctx.api.db.set(buildTemplateKey("welcome"), SYSTEM_TEMPLATES[0]!);
     (ctx.api.getConfig as jest.Mock).mockImplementation((k: string) => {
-      return k === "apiKey" ? "key" : k === "fromAddress" ? "f@e.com" : undefined;
+      return k === "apiKey"
+        ? "key"
+        : k === "fromAddress"
+          ? "f@e.com"
+          : undefined;
     });
-    (ctx.api.makeRequest as jest.Mock).mockResolvedValue({ ok: false, status: 500 });
+    (ctx.api.makeRequest as jest.Mock).mockResolvedValue({
+      ok: false,
+      status: 500,
+    });
 
     const hook = plugin.definition.hooks?.["user:register"];
     await expect(hook!(ctx, { email: "u@e.com" })).resolves.toBeUndefined();
@@ -1452,7 +1525,10 @@ describe("conversation:end hook", () => {
       };
       return cfg[k];
     });
-    (ctx.api.makeRequest as jest.Mock).mockResolvedValue({ ok: false, status: 500 });
+    (ctx.api.makeRequest as jest.Mock).mockResolvedValue({
+      ok: false,
+      status: 500,
+    });
 
     const hook = plugin.definition.hooks?.["conversation:end"];
     await expect(
@@ -1464,4 +1540,3 @@ describe("conversation:end hook", () => {
     );
   });
 });
-
