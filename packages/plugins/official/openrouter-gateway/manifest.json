@@ -1,0 +1,57 @@
+{
+  "name": "openrouter-gateway",
+  "version": "1.0.0",
+  "description": "Route all AI model calls through OpenRouter — one key for 200+ models with automatic fallbacks and cost tracking.",
+  "author": "Agentbase",
+  "license": "GPL-3.0",
+  "main": "dist/index.js",
+  "agentbase": {
+    "type": "plugin",
+    "apiVersion": "1"
+  },
+  "hooks": ["app:init", "conversation:beforeMessage"],
+  "endpoints": [
+    { "method": "GET", "path": "/models" },
+    { "method": "GET", "path": "/usage" },
+    { "method": "PUT", "path": "/config" },
+    { "method": "GET", "path": "/config" },
+    { "method": "POST", "path": "/test" }
+  ],
+  "settings": [
+    {
+      "key": "openRouterApiKey",
+      "type": "string",
+      "label": "OpenRouter API Key",
+      "encrypted": true
+    },
+    {
+      "key": "defaultModel",
+      "type": "string",
+      "label": "Default Model (e.g. openai/gpt-4o)",
+      "default": "openai/gpt-4o"
+    },
+    {
+      "key": "fallbackModels",
+      "type": "string",
+      "label": "Fallback Models (comma-separated)",
+      "default": "openai/gpt-4o-mini,anthropic/claude-3-5-haiku"
+    },
+    {
+      "key": "maxCostPerRequest",
+      "type": "number",
+      "label": "Max Cost Per Request (USD)",
+      "default": 0.5
+    },
+    {
+      "key": "siteUrl",
+      "type": "string",
+      "label": "Site URL (sent as HTTP-Referer to OpenRouter)"
+    },
+    {
+      "key": "appName",
+      "type": "string",
+      "label": "App Name (sent as X-Title to OpenRouter)"
+    }
+  ],
+  "permissions": ["network:external", "db:readwrite"]
+}
