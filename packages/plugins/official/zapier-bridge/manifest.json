@@ -1,0 +1,13 @@
+{
+  "name": "zapier-bridge",
+  "version": "1.0.0",
+  "description": "Expose Agentbase events as Zapier triggers and accept inbound Zapier actions",
+  "category": "integration",
+  "author": "Agentbase",
+  "license": "UNLICENSED",
+  "agentbase": {
+    "pluginSlug": "zapier-bridge",
+    "minPlatformVersion": "1.0.0"
+  },
+  "permissions": ["network:external", "db:readwrite"]
+}
