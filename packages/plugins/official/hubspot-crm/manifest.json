@@ -1,0 +1,53 @@
+{
+  "name": "hubspot-crm",
+  "version": "1.0.0",
+  "description": "Enrich HubSpot CRM contacts with AI conversation summaries. Auto-log interactions, update deal stages, and generate lead scores from chat data.",
+  "author": "Agentbase",
+  "license": "GPL-3.0",
+  "main": "dist/index.js",
+  "agentbase": {
+    "type": "plugin",
+    "apiVersion": "1"
+  },
+  "hooks": ["app:init", "conversation:end"],
+  "endpoints": [
+    { "method": "POST", "path": "/connect" },
+    { "method": "GET", "path": "/contacts" },
+    { "method": "GET", "path": "/contacts/:id" },
+    { "method": "POST", "path": "/contacts/:id/enrich" },
+    { "method": "GET", "path": "/deals" },
+    { "method": "POST", "path": "/deals/:id/update-stage" }
+  ],
+  "settings": [
+    {
+      "key": "hubspotApiKey",
+      "type": "string",
+      "label": "HubSpot Private App Token",
+      "encrypted": true
+    },
+    {
+      "key": "autoLogConversations",
+      "type": "boolean",
+      "label": "Automatically log conversations to HubSpot contact timelines",
+      "default": true
+    },
+    {
+      "key": "enrichModel",
+      "type": "select",
+      "label": "AI Model for Contact Enrichment",
+      "options": [
+        "gpt-4o-mini",
+        "gpt-4o",
+        "claude-3-5-haiku",
+        "claude-3-5-sonnet"
+      ],
+      "default": "gpt-4o-mini"
+    },
+    {
+      "key": "pipelineId",
+      "type": "string",
+      "label": "HubSpot Pipeline ID (optional — used to filter deals)"
+    }
+  ],
+  "permissions": ["network:external", "db:readwrite"]
+}

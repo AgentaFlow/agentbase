@@ -1,0 +1,35 @@
+{
+  "name": "@agentbase/plugin-hubspot-crm",
+  "version": "1.0.0",
+  "description": "Enrich HubSpot CRM contacts with AI conversation summaries. Auto-log interactions, update deal stages, and generate lead scores from chat data.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "lint": "eslint src --ext .ts"
+  },
+  "dependencies": {
+    "@agentbase/plugin-sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "@types/node": "^20.0.0",
+    "jest": "^29.5.0",
+    "ts-jest": "^29.1.0",
+    "typescript": "^5.0.0"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "roots": [
+      "<rootDir>/__tests__"
+    ],
+    "globals": {
+      "ts-jest": {
+        "tsconfig": "__tests__/tsconfig.json"
+      }
+    }
+  },
+  "license": "GPL-3.0"
+}
