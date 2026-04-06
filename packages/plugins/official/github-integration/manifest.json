@@ -1,0 +1,10 @@
+{
+  "name": "github-integration",
+  "version": "1.0.0",
+  "description": "Summarize pull requests, generate release notes, and respond to GitHub webhook events.",
+  "entryPoint": "dist/index.js",
+  "author": "Agentbase Team",
+  "agentbaseVersion": ">=1.0.0",
+  "permissions": [],
+  "peerDependencies": {}
+}
