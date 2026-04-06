@@ -1,0 +1,42 @@
+{
+  "name": "user-feedback-collector",
+  "version": "1.0.0",
+  "description": "Thumbs up/down rating after each AI response with optional comments. Aggregated quality scores per model and time period.",
+  "author": "Agentbase",
+  "license": "GPL-3.0",
+  "main": "dist/index.js",
+  "agentbase": {
+    "type": "plugin",
+    "apiVersion": "1"
+  },
+  "hooks": ["app:init"],
+  "filters": ["response:modify"],
+  "endpoints": [
+    { "method": "POST", "path": "/feedback" },
+    { "method": "GET", "path": "/feedback" },
+    { "method": "GET", "path": "/stats" },
+    { "method": "GET", "path": "/export" }
+  ],
+  "settings": [
+    {
+      "key": "enableAutoPrompt",
+      "type": "boolean",
+      "label": "Automatically prompt for feedback after each response",
+      "default": true
+    },
+    {
+      "key": "feedbackTypes",
+      "type": "select",
+      "label": "Rating style",
+      "options": ["thumbs", "stars", "both"],
+      "default": "thumbs"
+    },
+    {
+      "key": "requireComment",
+      "type": "boolean",
+      "label": "Require a comment with every rating",
+      "default": false
+    }
+  ],
+  "permissions": ["db:readwrite"]
+}
