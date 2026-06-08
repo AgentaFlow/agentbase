@@ -1,14 +1,18 @@
 {
-	"folders": [
-		{
-			"path": "."
-		},
-		{
-			"path": "../agentbase-marketplace"
-		}
-	],
-	"settings": {
-		"python-envs.defaultEnvManager": "ms-python.python:venv",
-		"typescript.tsdk": "node_modules/typescript/lib"
-	}
+  "folders": [
+    {
+      "path": ".",
+    },
+    {
+      "path": "../agentbase-marketplace",
+    },
+    {
+      "path": "../agentbase-azure",
+    },
+  ],
+  "settings": {
+    "python-envs.defaultEnvManager": "ms-python.python:venv",
+    "typescript.tsdk": "node_modules/typescript/lib",
+    "powershell.cwd": "agentbase-azure",
+  },
 }
