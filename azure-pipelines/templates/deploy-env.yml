@@ -1,0 +1,137 @@
+# deploy-env.yml — Reusable stage that provisions infra and deploys all three
+# Agentbase containers to one environment. Used for both staging and prod so the
+# logic lives in exactly one place (constitution III: no copy-paste duplication).
+#
+# The whole stage runs as a single deployment job bound to the Azure DevOps
+# Environment 'agentbase-<environment>'. Configure a manual-approval check on the
+# 'agentbase-prod' Environment to gate production (see docs/azure/pipeline.md).
+
+parameters:
+  - name: environment # staging | prod
+    type: string
+  - name: resourceGroup
+    type: string
+  - name: parameterFile # infra/main.parameters.<env>.json
+    type: string
+  - name: dependsOn
+    type: object
+    default: []
+
+stages:
+  - stage: Deploy_${{ parameters.environment }}
+    displayName: 'Deploy · ${{ parameters.environment }}'
+    dependsOn: ${{ parameters.dependsOn }}
+    condition: ne(variables['Build.Reason'], 'PullRequest') # PRs validate only
+    jobs:
+      - deployment: deploy
+        displayName: 'Provision + deploy (${{ parameters.environment }})'
+        environment: 'agentbase-${{ parameters.environment }}'
+        timeoutInMinutes: 60
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+
+                # 1 · Idempotent infrastructure deployment; export outputs as job vars.
+                - task: AzureCLI@2
+                  displayName: '1 · Deploy infrastructure (Bicep)'
+                  inputs:
+                    azureSubscription: $(AZURE_SERVICE_CONNECTION)
+                    scriptType: bash
+                    scriptLocation: inlineScript
+                    inlineScript: |
+                      set -euo pipefail
+                      az bicep install
+                      az deployment group create \
+                        --resource-group ${{ parameters.resourceGroup }} \
+                        --template-file infra/main.bicep \
+                        --mode Incremental \
+                        --parameters ${{ parameters.parameterFile }} \
+                                     postgresAdminPassword="$(PG_ADMIN_PASSWORD)" \
+                                     containerImageTag="$(imageTag)" \
+                        --query properties.outputs -o json > infra_outputs.json
+                      out() { jq -r ".$1.value" infra_outputs.json; }
+                      echo "##vso[task.setvariable variable=ACR_NAME]$(out acrName)"
+                      echo "##vso[task.setvariable variable=ACR_LOGIN]$(out acrLoginServer)"
+                      echo "##vso[task.setvariable variable=KV_NAME]$(out keyVaultName)"
+                      echo "##vso[task.setvariable variable=COSMOS_NAME]$(out cosmosAccountName)"
+                      echo "##vso[task.setvariable variable=REDIS_RES_NAME]$(out redisName)"
+                      echo "##vso[task.setvariable variable=CORE_APP]$(out coreAppName)"
+                      echo "##vso[task.setvariable variable=WEB_APP]$(out frontendAppName)"
+                      echo "##vso[task.setvariable variable=AI_APP]$(out aiAppName)"
+                      echo "##vso[task.setvariable variable=CORE_URL]$(out coreUrl)"
+                      echo "##vso[task.setvariable variable=WEB_URL]$(out frontendUrl)"
+                      echo "##vso[task.setvariable variable=AI_URL]$(out aiUrl)"
+
+                # 2 · Build & push the three images server-side in ACR (no agent Docker).
+                - task: AzureCLI@2
+                  displayName: '2 · Build & push images (az acr build)'
+                  inputs:
+                    azureSubscription: $(AZURE_SERVICE_CONNECTION)
+                    scriptType: bash
+                    scriptLocation: inlineScript
+                    inlineScript: |
+                      set -euo pipefail
+                      az acr build --registry "$(ACR_NAME)" \
+                        --image agentbase-core:$(imageTag) --image agentbase-core:latest \
+                        --file packages/core/Dockerfile .
+                      az acr build --registry "$(ACR_NAME)" \
+                        --image agentbase-ai-service:$(imageTag) --image agentbase-ai-service:latest \
+                        --file packages/ai-service/Dockerfile .
+                      az acr build --registry "$(ACR_NAME)" \
+                        --image agentbase-frontend:$(imageTag) --image agentbase-frontend:latest \
+                        --build-arg NEXT_PUBLIC_API_URL="$(CORE_URL)/api" \
+                        --build-arg NEXT_PUBLIC_AI_URL="$(AI_URL)/api" \
+                        --file packages/frontend/Dockerfile .
+
+                # 3 · Seed Key Vault. Secret values are mapped through env: (required for
+                #     secret variables); non-secret names come from step-1 job vars.
+                - task: AzureCLI@2
+                  displayName: '3 · Seed Key Vault secrets'
+                  env:
+                    KEY_VAULT_NAME: $(KV_NAME)
+                    RESOURCE_GROUP: ${{ parameters.resourceGroup }}
+                    COSMOS_ACCOUNT: $(COSMOS_NAME)
+                    REDIS_NAME: $(REDIS_RES_NAME)
+                    PG_ADMIN_PASSWORD: $(PG_ADMIN_PASSWORD)
+                    STRIPE_SECRET_KEY: $(STRIPE_SECRET_KEY)
+                    STRIPE_WEBHOOK_SECRET: $(STRIPE_WEBHOOK_SECRET)
+                    OPENAI_API_KEY: $(OPENAI_API_KEY)
+                    ANTHROPIC_API_KEY: $(ANTHROPIC_API_KEY)
+                    GEMINI_API_KEY: $(GEMINI_API_KEY)
+                  inputs:
+                    azureSubscription: $(AZURE_SERVICE_CONNECTION)
+                    scriptType: bash
+                    scriptLocation: inlineScript
+                    inlineScript: |
+                      set -euo pipefail
+                      bash azure-pipelines/scripts/seed-keyvault.sh
+
+                # 4 · Point each app at the freshly built image and restart (pulls via
+                #     managed identity). Core runs pending migrations on startup.
+                - task: AzureCLI@2
+                  displayName: '4 · Update containers & restart'
+                  inputs:
+                    azureSubscription: $(AZURE_SERVICE_CONNECTION)
+                    scriptType: bash
+                    scriptLocation: inlineScript
+                    inlineScript: |
+                      set -euo pipefail
+                      update() {
+                        az webapp config container set --name "$1" \
+                          --resource-group ${{ parameters.resourceGroup }} \
+                          --container-image-name "$(ACR_LOGIN)/$2:$(imageTag)" --output none
+                        az webapp restart --name "$1" --resource-group ${{ parameters.resourceGroup }}
+                      }
+                      update "$(CORE_APP)" agentbase-core
+                      update "$(AI_APP)"  agentbase-ai-service
+                      update "$(WEB_APP)" agentbase-frontend
+
+                # 5 · Verify all three endpoints return 200 (5-min timeout each).
+                - task: Bash@3
+                  displayName: '5 · Health check'
+                  inputs:
+                    targetType: filePath
+                    filePath: azure-pipelines/scripts/health-check.sh
+                    arguments: 'core=$(CORE_URL)/api/health web=$(WEB_URL)/ ai=$(AI_URL)/api/ai/health'

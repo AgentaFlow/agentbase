@@ -18,7 +18,7 @@
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
     "strictPropertyInitialization": false,
-    "types": ["jest", "node"],
+    "types": ["jest", "node", "multer"],
     "paths": {
       "@/*": ["./src/*"],
       "@agentbase/shared": ["../shared/src"],
