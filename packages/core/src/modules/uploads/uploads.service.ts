@@ -23,10 +23,31 @@ export class UploadsService {
   private readonly logger = new Logger(UploadsService.name);
   private readonly localDir = join(process.cwd(), 'uploads');
   private s3Client: any = null;
+  private azureContainer: any = null;
 
   constructor(private readonly config: ConfigService) {
+    const azureAccount = this.config.get('AZURE_STORAGE_ACCOUNT');
     const bucket = this.config.get('S3_BUCKET');
-    if (bucket) {
+
+    // Preferred on Azure: Blob Storage via managed identity (no account keys).
+    if (azureAccount) {
+      try {
+        const { BlobServiceClient } = require('@azure/storage-blob');
+        const { DefaultAzureCredential } = require('@azure/identity');
+        const endpoint =
+          this.config.get('AZURE_STORAGE_BLOB_ENDPOINT') ||
+          `https://${azureAccount}.blob.core.windows.net`;
+        const service = new BlobServiceClient(endpoint, new DefaultAzureCredential());
+        this.azureContainer = service.getContainerClient(
+          this.config.get('AZURE_STORAGE_CONTAINER', 'uploads'),
+        );
+        this.logger.log(`Azure Blob storage configured: account=${azureAccount}`);
+      } catch {
+        this.logger.warn('@azure/storage-blob not installed — falling back');
+      }
+    }
+
+    if (!this.azureContainer && bucket) {
       try {
         const { S3Client } = require('@aws-sdk/client-s3');
         this.s3Client = new S3Client({
@@ -41,8 +62,10 @@ export class UploadsService {
       } catch {
         this.logger.warn('AWS SDK not installed — using local storage');
       }
-    } else {
-      this.logger.log('No S3_BUCKET configured — using local file storage');
+    }
+
+    if (!this.azureContainer && !this.s3Client) {
+      this.logger.log('No object storage configured — using local file storage');
     }
   }
 
@@ -62,10 +85,20 @@ export class UploadsService {
     const ext = originalName.split('.').pop() || 'bin';
     const key = `${folder}/${randomBytes(12).toString('hex')}.${ext}`;
 
+    if (this.azureContainer) {
+      return this.uploadToAzure(buffer, key, mimeType);
+    }
     if (this.s3Client) {
       return this.uploadToS3(buffer, key, mimeType);
     }
     return this.uploadToLocal(buffer, key, mimeType);
+  }
+
+  private async uploadToAzure(buffer: Buffer, key: string, mimeType: string): Promise<UploadResult> {
+    const blob = this.azureContainer.getBlockBlobClient(key);
+    await blob.uploadData(buffer, { blobHTTPHeaders: { blobContentType: mimeType } });
+    this.logger.log(`Uploaded to Azure Blob: ${key} (${buffer.length} bytes)`);
+    return { key, url: blob.url, size: buffer.length, mimeType };
   }
 
   private async uploadToS3(buffer: Buffer, key: string, mimeType: string): Promise<UploadResult> {
@@ -107,6 +140,9 @@ export class UploadsService {
   }
 
   getPublicUrl(key: string): string {
+    if (this.azureContainer) {
+      return this.azureContainer.getBlockBlobClient(key).url;
+    }
     if (this.s3Client) {
       const bucket = this.config.get('S3_BUCKET');
       const region = this.config.get('S3_REGION', 'us-east-1');

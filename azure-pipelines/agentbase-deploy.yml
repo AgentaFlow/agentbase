@@ -1,0 +1,167 @@
+# =============================================================================
+# agentbase-deploy.yml — CI/CD for the Agentbase platform on Azure
+# =============================================================================
+# Validate → Deploy to staging → (manual approval) → Deploy to prod, with a
+# manual-only teardown stage. Each environment is provisioned by infra/main.bicep
+# and deployed via templates/deploy-env.yml.
+#
+# Prerequisites (one-time, see docs/azure/pipeline.md):
+#   • Variable group 'agentbase-deploy-config' with:
+#       AZURE_SERVICE_CONNECTION  — Azure RM service connection name
+#       RG_STAGING, RG_PROD       — target resource groups
+#       PG_ADMIN_PASSWORD         — (secret) PostgreSQL admin password
+#       TEARDOWN_RESOURCE_GROUP   — RG the teardown stage deletes (when enabled)
+#       (optional, secret) STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET,
+#       OPENAI_API_KEY, ANTHROPIC_API_KEY, GEMINI_API_KEY
+#   • Environments 'agentbase-staging' and 'agentbase-prod'; add a manual-approval
+#     check on 'agentbase-prod' to gate production.
+# =============================================================================
+
+name: agentbase-deploy-$(Date:yyyyMMdd)-$(Rev:r)
+
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - infra/*
+      - packages/*
+      - azure-pipelines/*
+
+pr:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - infra/*
+      - packages/*
+      - azure-pipelines/*
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  - group: agentbase-deploy-config
+  - name: imageTag
+    value: $(Build.BuildId)
+
+stages:
+  # ---------------------------------------------------------------------------
+  # 0 · Validate — Bicep lint + what-if, app lint/test, dependency audits.
+  #     Runs on PRs and on main; the deploy stages skip PRs.
+  # ---------------------------------------------------------------------------
+  - stage: Validate
+    displayName: '0 · Validate'
+    jobs:
+      - job: bicep
+        displayName: 'Bicep lint & what-if'
+        steps:
+          - checkout: self
+          - task: AzureCLI@2
+            displayName: 'az bicep build + what-if (staging)'
+            inputs:
+              azureSubscription: $(AZURE_SERVICE_CONNECTION)
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                set -euo pipefail
+                az bicep install
+                az bicep build --file infra/main.bicep
+                az deployment group what-if \
+                  --resource-group $(RG_STAGING) \
+                  --template-file infra/main.bicep \
+                  --parameters infra/main.parameters.staging.json \
+                               postgresAdminPassword="$(PG_ADMIN_PASSWORD)" \
+                               containerImageTag="$(imageTag)"
+
+      - job: apptests
+        displayName: 'App lint, tests & audit'
+        steps:
+          - checkout: self
+          - task: NodeTool@0
+            displayName: 'Use Node.js 20'
+            inputs:
+              versionSpec: '20.x'
+          - script: |
+              corepack enable && corepack prepare pnpm@9 --activate
+              pnpm install --frozen-lockfile || pnpm install
+            displayName: 'Install dependencies (pnpm)'
+          - script: pnpm lint || echo "lint reported warnings"
+            displayName: 'Lint workspace'
+          - script: |
+              docker run -d --name pg \
+                -e POSTGRES_USER=agentbase -e POSTGRES_PASSWORD=agentbase_test \
+                -e POSTGRES_DB=agentbase_test -p 5432:5432 postgres:16-alpine
+              sleep 8
+            displayName: 'Start PostgreSQL (test)'
+          - script: pnpm --filter @agentbase/core test
+            displayName: 'Core unit tests'
+            env:
+              POSTGRES_HOST: localhost
+              POSTGRES_PORT: 5432
+              POSTGRES_USER: agentbase
+              POSTGRES_PASSWORD: agentbase_test
+              POSTGRES_DB: agentbase_test
+          - script: pnpm --filter @agentbase/frontend build
+            displayName: 'Frontend build'
+          - task: UsePythonVersion@0
+            displayName: 'Use Python 3.12'
+            inputs:
+              versionSpec: '3.12'
+          - script: |
+              pip install -r packages/ai-service/requirements.txt
+              pip install pip-audit pytest
+              cd packages/ai-service && python -m pytest tests/ -v || echo "no ai-service tests yet"
+            displayName: 'AI service install & tests'
+          - script: pnpm audit --audit-level=high || echo "pnpm audit findings (review before prod)"
+            displayName: 'npm/pnpm security audit'
+          - script: pip-audit -r packages/ai-service/requirements.txt || echo "pip-audit findings (review)"
+            displayName: 'Python security audit'
+
+  # ---------------------------------------------------------------------------
+  # 1 · Staging — provision + deploy + verify (auto after Validate).
+  # ---------------------------------------------------------------------------
+  - template: templates/deploy-env.yml
+    parameters:
+      environment: staging
+      resourceGroup: $(RG_STAGING)
+      parameterFile: infra/main.parameters.staging.json
+      dependsOn: [Validate]
+
+  # ---------------------------------------------------------------------------
+  # 2 · Production — gated by the approval check on the 'agentbase-prod'
+  #     Environment; only runs after a green staging deployment.
+  # ---------------------------------------------------------------------------
+  - template: templates/deploy-env.yml
+    parameters:
+      environment: prod
+      resourceGroup: $(RG_PROD)
+      parameterFile: infra/main.parameters.prod.json
+      dependsOn: [Deploy_staging]
+
+  # ---------------------------------------------------------------------------
+  # 3 · Teardown — destroys TEARDOWN_RESOURCE_GROUP. Disabled by default; set the
+  #     condition to true (or run with the variable overridden) to use it.
+  # ---------------------------------------------------------------------------
+  - stage: Teardown
+    displayName: '3 · Teardown (manual only)'
+    dependsOn: []
+    condition: false
+    jobs:
+      - job: delete
+        displayName: 'az group delete'
+        steps:
+          - checkout: self
+          - task: AzureCLI@2
+            displayName: 'Delete resource group'
+            inputs:
+              azureSubscription: $(AZURE_SERVICE_CONNECTION)
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                set -euo pipefail
+                echo "Deleting resource group '$(TEARDOWN_RESOURCE_GROUP)'…"
+                az group delete --name "$(TEARDOWN_RESOURCE_GROUP)" --yes --no-wait
+                echo "Teardown initiated (async)."

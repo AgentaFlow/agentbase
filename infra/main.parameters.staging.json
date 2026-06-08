@@ -1,0 +1,12 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "environment": { "value": "staging" },
+    "project": { "value": "agentbase" },
+    "owner": { "value": "platform-team" },
+    "appServicePlanSku": { "value": "B2" },
+    "deployPrivateNetworking": { "value": false },
+    "marketplaceUrl": { "value": "https://marketplace-staging.agentbase.dev/api/v1" }
+  }
+}

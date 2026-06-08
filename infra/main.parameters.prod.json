@@ -1,0 +1,12 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "environment": { "value": "prod" },
+    "project": { "value": "agentbase" },
+    "owner": { "value": "platform-team" },
+    "appServicePlanSku": { "value": "P1v2" },
+    "deployPrivateNetworking": { "value": true },
+    "marketplaceUrl": { "value": "https://marketplace.agentbase.dev/api/v1" }
+  }
+}
