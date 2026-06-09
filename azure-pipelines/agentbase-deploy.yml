@@ -25,9 +25,9 @@ trigger:
       - main
   paths:
     include:
-      - infra/*
-      - packages/*
-      - azure-pipelines/*
+      - infra/**
+      - packages/**
+      - azure-pipelines/**
 
 pr:
   branches:
