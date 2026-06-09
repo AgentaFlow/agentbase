@@ -13,7 +13,7 @@ export const AppDataSource = new DataSource({
   password: process.env.POSTGRES_PASSWORD || 'agentbase_dev',
   database: process.env.POSTGRES_DB || 'agentbase',
   // Azure Database for PostgreSQL requires TLS (matches app.module.ts runtime config).
-  ssl: process.env.POSTGRES_SSL === 'true' ? { rejectUnauthorized: false } : false,
+  ssl: process.env.POSTGRES_SSL === 'true' ? { rejectUnauthorized: true } : false,
   entities: [join(__dirname, 'database/entities/**/*.entity{.ts,.js}')],
   migrations: [join(__dirname, 'database/migrations/**/*{.ts,.js}')],
   synchronize: false,
