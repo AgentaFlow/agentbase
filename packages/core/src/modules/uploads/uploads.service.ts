@@ -83,7 +83,12 @@ export class UploadsService {
     }
 
     const ext = originalName.split('.').pop() || 'bin';
-    const key = `${folder}/${randomBytes(12).toString('hex')}.${ext}`;
+    const safeFolder = folder
+      .replace(/\\/g, '/')
+      .split('/')
+      .filter((p) => p && p !== '.' && p !== '..')
+      .join('/');
+    const key = `${safeFolder || 'general'}/${randomBytes(12).toString('hex')}.${ext}`;
 
     if (this.azureContainer) {
       return this.uploadToAzure(buffer, key, mimeType);
