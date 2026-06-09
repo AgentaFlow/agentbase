@@ -1,4 +1,4 @@
-import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { randomBytes } from 'crypto';
 import { join } from 'path';
@@ -103,7 +103,31 @@ export class UploadsService {
     const blob = this.azureContainer.getBlockBlobClient(key);
     await blob.uploadData(buffer, { blobHTTPHeaders: { blobContentType: mimeType } });
     this.logger.log(`Uploaded to Azure Blob: ${key} (${buffer.length} bytes)`);
-    return { key, url: blob.url, size: buffer.length, mimeType };
+    // The container is private and (in prod) the storage account has no public
+    // network access — the raw blob URL is NOT browser-reachable. Hand back an
+    // app-mediated URL; the app streams the blob over its VNet-integrated identity.
+    return { key, url: this.azureFileUrl(key), size: buffer.length, mimeType };
+  }
+
+  /** Public capability URL served by UploadsFileController. */
+  private azureFileUrl(key: string): string {
+    const baseUrl = this.config.get('APP_URL', 'http://localhost:3001').replace(/\/$/, '');
+    return `${baseUrl}/api/uploads/file?key=${encodeURIComponent(key)}`;
+  }
+
+  /** Streams a stored Azure blob. Backs the public download endpoint. */
+  async getObject(
+    key: string,
+  ): Promise<{ stream: NodeJS.ReadableStream; contentType: string; contentLength?: number }> {
+    if (!this.azureContainer) {
+      throw new NotFoundException('Object storage not configured for streaming');
+    }
+    const download = await this.azureContainer.getBlockBlobClient(key).download();
+    return {
+      stream: download.readableStreamBody,
+      contentType: download.contentType || 'application/octet-stream',
+      contentLength: download.contentLength,
+    };
   }
 
   private async uploadToS3(buffer: Buffer, key: string, mimeType: string): Promise<UploadResult> {
@@ -146,7 +170,7 @@ export class UploadsService {
 
   getPublicUrl(key: string): string {
     if (this.azureContainer) {
-      return this.azureContainer.getBlockBlobClient(key).url;
+      return this.azureFileUrl(key);
     }
     if (this.s3Client) {
       const bucket = this.config.get('S3_BUCKET');

@@ -266,6 +266,13 @@ local/dev and tests are unaffected):
 - **Blob uploads** — `uploads.service.ts` gains an Azure Blob backend using
   `DefaultAzureCredential` (managed identity), selected when
   `AZURE_STORAGE_ACCOUNT` is set; otherwise the existing S3/local paths apply.
+  The container is private and (in prod) the storage account has **no public
+  network access**, so the raw blob URL is not browser-reachable. Uploads
+  therefore return an **app-mediated capability URL**
+  (`GET /api/uploads/file?key=…`, served by the unauthenticated
+  `UploadsFileController`); the app streams the blob over its VNet-integrated
+  managed identity. This keeps storage fully private while remaining usable from
+  `<img src>` / `<a href>`.
 - **Build fix** — `packages/core/tsconfig.json` now includes the `multer` types
   so `nest build` (and therefore the container image) compiles. *(Pre-existing
   break: CI only ran core tests, never `nest build`.)*
