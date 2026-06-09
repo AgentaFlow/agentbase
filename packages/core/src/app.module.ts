@@ -80,10 +80,8 @@ import { ScheduleModule } from "@nestjs/schedule";
         username: config.get("POSTGRES_USER", "agentbase"),
         password: config.get("POSTGRES_PASSWORD", "agentbase_dev"),
         database: config.get("POSTGRES_DB", "agentbase"),
-        // Azure Database for PostgreSQL requires TLS. rejectUnauthorized:false accepts
-        // the managed server certificate; pin the DigiCert Global Root G2 CA for strict
-        // validation if required. SSL is off for local/dev (POSTGRES_SSL unset).
-        ssl: config.get("POSTGRES_SSL") === "true" ? { rejectUnauthorized: false } : false,
+        // Azure Database for PostgreSQL requires TLS; keep certificate verification enabled.
+        ssl: config.get("POSTGRES_SSL") === "true" ? { rejectUnauthorized: true } : false,
         autoLoadEntities: true,
         synchronize: false, // Use migrations instead
         migrations: ["dist/database/migrations/*.js"],
