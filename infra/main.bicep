@@ -293,6 +293,9 @@ module coreApp 'modules/app-service-container.bicep' = {
       { name: 'JWT_REFRESH_SECRET', value: kvRef(kvUri, 'jwt-refresh-secret') }
       { name: 'ENCRYPTION_KEY', value: kvRef(kvUri, 'encryption-key') }
       { name: 'PLUGIN_SETTINGS_ENCRYPTION_KEY', value: kvRef(kvUri, 'plugin-settings-encryption-key') }
+      // Auth token lifetimes (match .env.example defaults)
+      { name: 'JWT_EXPIRATION', value: '24h' }
+      { name: 'JWT_REFRESH_EXPIRATION', value: '7d' }
       // Payments
       { name: 'STRIPE_SECRET_KEY', value: kvRef(kvUri, 'stripe-secret-key') }
       { name: 'STRIPE_WEBHOOK_SECRET', value: kvRef(kvUri, 'stripe-webhook-secret') }
@@ -338,6 +341,10 @@ module aiApp 'modules/app-service-container.bicep' = {
       { name: 'OPENAI_API_KEY', value: kvRef(kvUri, 'openai-api-key') }
       { name: 'ANTHROPIC_API_KEY', value: kvRef(kvUri, 'anthropic-api-key') }
       { name: 'GEMINI_API_KEY', value: kvRef(kvUri, 'gemini-api-key') }
+      { name: 'HUGGINGFACE_API_KEY', value: kvRef(kvUri, 'huggingface-api-key') }
+      // CORS allow_origins — must match the actual deployed URLs, not localhost defaults
+      { name: 'CORE_API_URL', value: 'https://${coreHost}' }
+      { name: 'FRONTEND_URL', value: 'https://${frontendHost}' }
     ]
   }
 }

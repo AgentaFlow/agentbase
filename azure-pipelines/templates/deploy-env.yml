@@ -13,6 +13,8 @@ parameters:
     type: string
   - name: parameterFile # infra/main.parameters.<env>.json
     type: string
+  - name: serviceConnection # Azure RM service connection scoped to this environment
+    type: string
   - name: dependsOn
     type: object
     default: []
@@ -37,7 +39,7 @@ stages:
                 - task: AzureCLI@2
                   displayName: '1 · Deploy infrastructure (Bicep)'
                   inputs:
-                    azureSubscription: $(AZURE_SERVICE_CONNECTION)
+                    azureSubscription: ${{ parameters.serviceConnection }}
                     scriptType: bash
                     scriptLocation: inlineScript
                     inlineScript: |
@@ -68,7 +70,7 @@ stages:
                 - task: AzureCLI@2
                   displayName: '2 · Build & push images (az acr build)'
                   inputs:
-                    azureSubscription: $(AZURE_SERVICE_CONNECTION)
+                    azureSubscription: ${{ parameters.serviceConnection }}
                     scriptType: bash
                     scriptLocation: inlineScript
                     inlineScript: |
@@ -100,8 +102,9 @@ stages:
                     OPENAI_API_KEY: $(OPENAI_API_KEY)
                     ANTHROPIC_API_KEY: $(ANTHROPIC_API_KEY)
                     GEMINI_API_KEY: $(GEMINI_API_KEY)
+                    HUGGINGFACE_API_KEY: $(HUGGINGFACE_API_KEY)
                   inputs:
-                    azureSubscription: $(AZURE_SERVICE_CONNECTION)
+                    azureSubscription: ${{ parameters.serviceConnection }}
                     scriptType: bash
                     scriptLocation: inlineScript
                     inlineScript: |
@@ -113,7 +116,7 @@ stages:
                 - task: AzureCLI@2
                   displayName: '4 · Update containers & restart'
                   inputs:
-                    azureSubscription: $(AZURE_SERVICE_CONNECTION)
+                    azureSubscription: ${{ parameters.serviceConnection }}
                     scriptType: bash
                     scriptLocation: inlineScript
                     inlineScript: |
