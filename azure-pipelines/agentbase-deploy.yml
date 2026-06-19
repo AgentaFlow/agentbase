@@ -7,12 +7,13 @@
 #
 # Prerequisites (one-time, see docs/azure/pipeline.md):
 #   • Variable group 'agentbase-deploy-config' with:
-#       AZURE_SERVICE_CONNECTION  — Azure RM service connection name
+#       AZURE_SERVICE_CONNECTION_STAGING — Azure RM service connection scoped to RG_STAGING only
+#       AZURE_SERVICE_CONNECTION_PROD    — Azure RM service connection scoped to RG_PROD only
 #       RG_STAGING, RG_PROD       — target resource groups
 #       PG_ADMIN_PASSWORD         — (secret) PostgreSQL admin password
 #       TEARDOWN_RESOURCE_GROUP   — RG the teardown stage deletes (when enabled)
 #       (optional, secret) STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET,
-#       OPENAI_API_KEY, ANTHROPIC_API_KEY, GEMINI_API_KEY
+#       OPENAI_API_KEY, ANTHROPIC_API_KEY, GEMINI_API_KEY, HUGGINGFACE_API_KEY
 #   • Environments 'agentbase-staging' and 'agentbase-prod'; add a manual-approval
 #     check on 'agentbase-prod' to gate production.
 # =============================================================================
@@ -62,7 +63,7 @@ stages:
           - task: AzureCLI@2
             displayName: 'az bicep build + what-if (staging)'
             inputs:
-              azureSubscription: $(AZURE_SERVICE_CONNECTION)
+              azureSubscription: $(AZURE_SERVICE_CONNECTION_STAGING)
               scriptType: bash
               scriptLocation: inlineScript
               inlineScript: |
@@ -128,6 +129,7 @@ stages:
       environment: staging
       resourceGroup: $(RG_STAGING)
       parameterFile: infra/main.parameters.staging.json
+      serviceConnection: $(AZURE_SERVICE_CONNECTION_STAGING)
       dependsOn: [Validate]
 
   # ---------------------------------------------------------------------------
@@ -139,6 +141,7 @@ stages:
       environment: prod
       resourceGroup: $(RG_PROD)
       parameterFile: infra/main.parameters.prod.json
+      serviceConnection: $(AZURE_SERVICE_CONNECTION_PROD)
       dependsOn: [Deploy_staging]
 
   # ---------------------------------------------------------------------------
@@ -157,7 +160,7 @@ stages:
           - task: AzureCLI@2
             displayName: 'Delete resource group'
             inputs:
-              azureSubscription: $(AZURE_SERVICE_CONNECTION)
+              azureSubscription: $(AZURE_SERVICE_CONNECTION_PROD)
               scriptType: bash
               scriptLocation: inlineScript
               inlineScript: |

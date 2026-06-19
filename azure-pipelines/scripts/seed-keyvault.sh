@@ -80,5 +80,6 @@ set_secret stripe-webhook-secret "$(or_placeholder "${STRIPE_WEBHOOK_SECRET:-}")
 set_secret openai-api-key "$(or_placeholder "${OPENAI_API_KEY:-}")"
 set_secret anthropic-api-key "$(or_placeholder "${ANTHROPIC_API_KEY:-}")"
 set_secret gemini-api-key "$(or_placeholder "${GEMINI_API_KEY:-}")"
+set_secret huggingface-api-key "$(or_placeholder "${HUGGINGFACE_API_KEY:-}")"
 
 echo "Key Vault seeding complete."
