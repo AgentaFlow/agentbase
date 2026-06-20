@@ -1,8 +1,8 @@
 # Agentbase
 
-**Similar to WordPress, made for AI Native Applications** — Build, deploy, and manage AI-powered applications without the complexity.
+**Open-source, self-hosted platform for AI apps — WordPress for the AI era.**
 
-Agentbase is an open-source platform that brings the WordPress model to AI development: plugins, themes, a marketplace, and a hosted option — everything you need to launch AI products fast.
+Build, embed, and ship AI chatbots and assistants with WordPress-style plugins and themes, bring-your-own-key support for OpenAI, Anthropic, and Gemini, and an embeddable widget for any website. A self-hosted, open-source alternative to closed AI-chat SaaS like Chatbase and Intercom Fin — your code, your keys, your infrastructure.
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![pnpm](https://img.shields.io/badge/maintained%20with-pnpm-cc00ff.svg)](https://pnpm.io/)
@@ -10,6 +10,10 @@ Agentbase is an open-source platform that brings the WordPress model to AI devel
 
 > 📖 **Full documentation is available at [agentaflow.github.io/agentbase](https://agentaflow.github.io/agentbase)**
 > — covering self-hosting, plugin & theme development, AI model configuration, and the full API reference.
+
+## Open-source core, optional hosted service
+
+The full Agentbase platform in this repository is **GPL-3.0 and self-hostable with Docker** — your code, your keys, your infrastructure, no vendor lock-in. [AgentaFlow](https://www.agentaflow.com) additionally operates a managed cloud and the public marketplace catalog as **optional** paid hosted services for teams who prefer not to run their own. Everything documented here runs entirely on infrastructure you control.
 
 ## Screenshots
 
@@ -61,7 +65,7 @@ agentbase/
 | **SQL Database**   | PostgreSQL 16                                 |
 | **Document DB**    | MongoDB 7                                     |
 | **Cache**          | Redis 7                                       |
-| **Infrastructure** | Docker · Azure App Service + Bicep IaC        |
+| **Infrastructure** | Docker — self-host on any cloud or bare metal (production Compose + Azure Bicep IaC included) |
 | **License**        | GPL-3.0                                       |
 
 ## Quick Start
@@ -121,11 +125,19 @@ npx ts-node src/cli.ts status    # Check service status
 npx ts-node src/cli.ts update    # Update to latest version
 ```
 
+### Deployment Targets
+
+Agentbase is plain Docker — deploy it on any cloud or bare metal, no lock-in:
+
+- **Docker Compose** (universal baseline) — production stack in [docker-compose.prod.yml](docker-compose.prod.yml)
+- **Azure** — reference infrastructure-as-code (Bicep) in [infra/](infra/), documented in [docs/azure/](docs/azure/)
+- **DigitalOcean / GCP** — guides planned ([contributions welcome](CONTRIBUTING.md))
+
 ## Features
 
 ### 🤖 AI Integration
 
-- **Multi-Provider Support** — OpenAI (GPT-4, GPT-4o, GPT-3.5), Anthropic (Claude), Google Gemini (2.0 Flash, 1.5 Pro, 1.5 Flash), HuggingFace (Inference API)
+- **Multi-Provider Support** — OpenAI (GPT-4, GPT-4 Turbo, GPT-4o, GPT-4o Mini, GPT-3.5 Turbo), Anthropic (Claude Sonnet 4.5, Claude Haiku 4.5), Google Gemini (2.0 Flash, 1.5 Pro, 1.5 Flash), HuggingFace (Llama 3.1, Mistral, Mixtral, Phi-3, and more via Inference API)
 - **BYOK (Bring Your Own Key)** — Users can securely store their own provider API keys, encrypted at rest with AES-256-GCM. BYOK keys bypass the platform quota gate entirely and are decrypted ephemerally per request — never cached or exposed to browser clients
 - **Model Configuration Dashboard** — Per-app model configs with provider selection, parameter tuning (temperature, max tokens, top-p), and system prompts
 - **A/B Testing** — Model config versioning with traffic splitting and performance metrics tracking
@@ -140,7 +152,7 @@ npx ts-node src/cli.ts update    # Update to latest version
 - **Plugin SDK** — TypeScript interfaces and utilities for plugin development
 - **Advanced Capabilities** — Database access (scoped key-value store), custom API endpoints, cron scheduling, webhooks, admin UI extensions, inter-plugin event bus
 - **Lifecycle Management** — Install, activate, deactivate, uninstall with dependency resolution
-- **Marketplace** — Browse, search, rate, and review plugins and themes with 8 categories
+- **Marketplace** — Browse, search, rate, and review plugins and themes across multiple categories
 - **Plugin Versioning** — Multiple versions per plugin with changelogs, compatibility checks, and checksums
 - **Developer Portal** — Submit plugins/themes for marketplace review, admin approval workflow
 - **Download Tracking** — Automatic install/download counters
@@ -214,8 +226,10 @@ npx ts-node src/cli.ts update    # Update to latest version
 - `GET /api/auth/google` — OAuth: Redirect to Google
 - `GET /api/auth/google/callback` — OAuth: Google callback
 - `GET /api/auth/providers` — List available OAuth providers
+- `POST /api/auth/refresh` — Refresh access token
 - `POST /api/auth/change-password` — Change password
-- `POST /api/auth/password-reset/request` — Request password reset
+- `POST /api/auth/password-reset/request` — Request password reset email
+- `POST /api/auth/password-reset` — Reset password with token
 
 ### Applications
 
@@ -238,25 +252,26 @@ npx ts-node src/cli.ts update    # Update to latest version
 
 ### Marketplace
 
-- `GET /api/marketplace/plugins/browse` — Browse plugins
-- `GET /api/marketplace/plugins/featured` — Featured plugins
-- `GET /api/marketplace/plugins/categories` — Plugin categories
+- `GET /api/marketplace/browse` — Browse plugins
+- `GET /api/marketplace/featured` — Featured plugins
+- `GET /api/marketplace/categories` — Plugin categories
 - `GET /api/marketplace/plugins/:id` — Plugin detail with rating stats
 - `GET /api/marketplace/plugins/:id/reviews` — Plugin reviews
 - `POST /api/marketplace/plugins/:id/reviews` — Submit review
 - `GET /api/marketplace/plugins/:id/versions` — Plugin versions
 - `POST /api/marketplace/plugins/:id/versions` — Publish new version
-- `GET /api/marketplace/themes/browse` — Browse themes
+- `GET /api/marketplace/themes` — Browse themes
 - `GET /api/marketplace/themes/featured` — Featured themes
+- `GET /api/marketplace/themes/categories` — Theme categories
 - `GET /api/marketplace/themes/:id` — Theme detail
 - `GET /api/marketplace/themes/:id/reviews` — Theme reviews
 - `POST /api/marketplace/themes/:id/reviews` — Submit theme review
 - `POST /api/marketplace/submit/plugin` — Developer: submit plugin
 - `POST /api/marketplace/submit/theme` — Developer: submit theme
-- `GET /api/marketplace/admin/plugins/pending` — Admin: pending plugins
+- `GET /api/marketplace/admin/pending/plugins` — Admin: pending plugins
 - `POST /api/marketplace/admin/plugins/:id/approve` — Admin: approve plugin
 - `POST /api/marketplace/admin/plugins/:id/reject` — Admin: reject plugin
-- `GET /api/marketplace/admin/themes/pending` — Admin: pending themes
+- `GET /api/marketplace/admin/pending/themes` — Admin: pending themes
 - `POST /api/marketplace/admin/themes/:id/approve` — Admin: approve theme
 - `POST /api/marketplace/admin/themes/:id/reject` — Admin: reject theme
 
@@ -306,12 +321,12 @@ npx ts-node src/cli.ts update    # Update to latest version
 
 ## AI Providers
 
-Agentbase supports multiple AI providers out of the box:
+Agentbase supports multiple AI providers out of the box. With BYOK, any model the provider exposes via their API is supported — just supply your key and specify the model ID; the platform routes the request directly to the provider with no additional configuration.
 
-- **OpenAI** — GPT-4, GPT-4o, GPT-3.5 Turbo
-- **Anthropic** — Claude Sonnet 4.5, Claude Haiku 4.5
-- **Google Gemini** — Gemini 2.0 Flash, Gemini 1.5 Pro, Gemini 1.5 Flash
-- **HuggingFace** — Any model via the Inference API (Mistral, Llama, Falcon, etc.)
+- **OpenAI** — o3 Mini, o1, o1 Mini, GPT-4o, GPT-4o Mini, GPT-4 Turbo, GPT-4, GPT-3.5 Turbo
+- **Anthropic** — Claude Opus 4.8, Claude Sonnet 4.6, Claude Sonnet 4.5, Claude Haiku 4.5
+- **Google Gemini** — Gemini 2.0 Flash, Gemini 2.0 Flash Thinking, Gemini 1.5 Pro, Gemini 1.5 Flash
+- **HuggingFace** — Llama 3.1 8B, Mistral 7B, Mixtral 8x7B, Phi-3 Mini, Zephyr 7B (any model via Inference API)
 
 Configure provider keys in one of two ways:
 
@@ -326,9 +341,19 @@ Agentbase handles provider routing, rate limiting, and conversation management a
 
 See [CHANGELOG.md](CHANGELOG.md) for a detailed history of changes across all phases.
 
-## Contributing
+## Contributing & Get Involved
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines.
+Agentbase is pre-launch and actively developed — it's a great time to get involved
+and shape the project early. We welcome contributions of all sizes, from docs fixes
+to new plugins, themes, and providers.
+
+- **Start here:** [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines and the local setup above.
+- **Good places to jump in:**
+  - DigitalOcean / GCP deployment guides (Azure reference IaC already exists in [infra/](infra/) to model from)
+  - New marketplace plugins and themes built on the [Plugin SDK](packages/plugins) and [Theme SDK](packages/themes)
+  - Additional AI provider integrations and example apps
+  - Documentation, tutorials, and the [examples gallery](docs/pages/examples.mdx)
+- **Found a bug or have an idea?** Open an issue — well-scoped issues and PRs are the fastest way to help.
 
 ## License
 
