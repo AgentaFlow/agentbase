@@ -57,6 +57,9 @@ param deployPrivateNetworking bool = false
 @description('Marketplace API base URL the core platform connects to (separate deployment)')
 param marketplaceUrl string = 'https://marketplace.agentbase.dev/api/v1'
 
+@description('Azure region for PostgreSQL Flexible Server. Defaults to location but can be overridden per-environment when the subscription lacks quota in the primary region.')
+param postgresLocation string = location
+
 // ----------------------------------------------------------------------------
 // Variables — naming & tags
 // ----------------------------------------------------------------------------
@@ -151,7 +154,7 @@ module postgres 'modules/postgres-flexible.bicep' = {
   name: 'postgres'
   params: {
     name: postgresName
-    location: location
+    location: postgresLocation
     tags: tags
     administratorPassword: postgresAdminPassword
     allowPublicAccess: !deployPrivateNetworking
