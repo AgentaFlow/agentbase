@@ -67,24 +67,34 @@ stages:
                       echo "##vso[task.setvariable variable=AI_URL]$(out aiUrl)"
 
                 # 2 · Build & push the three images server-side in ACR (no agent Docker).
+                #     AZURE_ARTIFACTS_TOKEN (System.AccessToken) is passed as a build arg so
+                #     each Dockerfile can authenticate to the Azure Artifacts npm/PyPI feeds
+                #     during the package install step inside the build.
                 - task: AzureCLI@2
                   displayName: '2 · Build & push images (az acr build)'
+                  env:
+                    AZURE_ARTIFACTS_TOKEN: $(System.AccessToken)
                   inputs:
                     azureSubscription: ${{ parameters.serviceConnection }}
                     scriptType: bash
                     scriptLocation: inlineScript
                     inlineScript: |
                       set -euo pipefail
+                      # Construct authenticated PyPI URL from the same token (basic-auth format)
+                      ARTIFACTS_PIP_URL="https://build:${AZURE_ARTIFACTS_TOKEN}@pkgs.dev.azure.com/agentaflow/agentbase/_packaging/python/pypi/simple/"
                       az acr build --registry "$(ACR_NAME)" \
+                        --build-arg AZURE_ARTIFACTS_TOKEN="$AZURE_ARTIFACTS_TOKEN" \
                         --image agentbase-core:$(imageTag) --image agentbase-core:latest \
                         --file packages/core/Dockerfile .
                       az acr build --registry "$(ACR_NAME)" \
+                        --build-arg AZURE_ARTIFACTS_PIP_URL="$ARTIFACTS_PIP_URL" \
                         --image agentbase-ai-service:$(imageTag) --image agentbase-ai-service:latest \
                         --file packages/ai-service/Dockerfile .
                       az acr build --registry "$(ACR_NAME)" \
-                        --image agentbase-frontend:$(imageTag) --image agentbase-frontend:latest \
+                        --build-arg AZURE_ARTIFACTS_TOKEN="$AZURE_ARTIFACTS_TOKEN" \
                         --build-arg NEXT_PUBLIC_API_URL="$(CORE_URL)/api" \
                         --build-arg NEXT_PUBLIC_AI_URL="$(AI_URL)/api" \
+                        --image agentbase-frontend:$(imageTag) --image agentbase-frontend:latest \
                         --file packages/frontend/Dockerfile .
 
                 # 3 · Seed Key Vault. Secret values are mapped through env: (required for

@@ -1,16 +1,21 @@
 # ---- Build Stage ----
-FROM python:3.12-slim AS builder
+FROM mcr.microsoft.com/cbl-mariner/base/python:3.12 AS builder
 WORKDIR /app
 
 COPY packages/ai-service/requirements.txt .
-RUN pip install --no-cache-dir --target=/deps -r requirements.txt
+
+# Inject Azure Artifacts PyPI URL; falls back to public PyPI for local builds without the arg
+ARG AZURE_ARTIFACTS_PIP_URL
+RUN pip install --no-cache-dir \
+      --index-url "${AZURE_ARTIFACTS_PIP_URL:-https://pypi.org/simple/}" \
+      --target=/deps -r requirements.txt
 
 # ---- Production Stage ----
-FROM python:3.12-slim AS production
+FROM mcr.microsoft.com/cbl-mariner/base/python:3.12 AS production
 WORKDIR /app
 
-RUN addgroup --system agentbase && adduser --system --group agentbase
-RUN apt-get update && apt-get install -y --no-install-recommends wget && rm -rf /var/lib/apt/lists/*
+RUN groupadd -r agentbase && useradd -r -g agentbase -s /sbin/nologin -M agentbase
+RUN tdnf install -y wget
 
 COPY --from=builder /deps /usr/local/lib/python3.12/site-packages
 COPY packages/ai-service/app ./app
