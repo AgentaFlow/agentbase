@@ -6,6 +6,7 @@
     "project": { "value": "agentbase" },
     "owner": { "value": "platform-team" },
     "appServicePlanSku": { "value": "B2" },
+    "postgresLocation": { "value": "eastus2" },
     "deployPrivateNetworking": { "value": false },
     "marketplaceUrl": { "value": "https://marketplace-staging.agentbase.dev/api/v1" }
   }
