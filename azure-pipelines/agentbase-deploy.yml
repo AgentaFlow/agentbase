@@ -85,6 +85,10 @@ stages:
             displayName: 'Use Node.js 20'
             inputs:
               versionSpec: '20.x'
+          - task: NpmAuthenticate@0
+            displayName: 'Authenticate npm → Azure Artifacts'
+            inputs:
+              workingFile: .npmrc
           - script: |
               corepack enable && corepack prepare pnpm@9 --activate
               pnpm install --frozen-lockfile || pnpm install
@@ -111,6 +115,11 @@ stages:
             displayName: 'Use Python 3.12'
             inputs:
               versionSpec: '3.12'
+          - task: PipAuthenticate@1
+            displayName: 'Authenticate pip → Azure Artifacts'
+            inputs:
+              artifactsFeeds: 'agentbase/python'
+              onlyAddExtraIndex: false
           - script: |
               pip install -r packages/ai-service/requirements.txt
               pip install pip-audit pytest
