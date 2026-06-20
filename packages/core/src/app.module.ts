@@ -35,6 +35,7 @@ import { SystemHealthModule } from "./modules/system-health/system-health.module
 import { StripeModule } from "./modules/stripe/stripe.module";
 import { ProviderKeysModule } from "./modules/provider-keys/provider-keys.module";
 import { ScheduleModule } from "@nestjs/schedule";
+import { RedisModule } from "./common/services/redis.module";
 
 @Module({
   imports: [
@@ -85,7 +86,10 @@ import { ScheduleModule } from "@nestjs/schedule";
         autoLoadEntities: true,
         synchronize: false, // Use migrations instead
         migrations: ["dist/database/migrations/*.js"],
-        migrationsRun: config.get("RUN_MIGRATIONS") === "true",
+        // Migrations are NOT auto-run here. When RUN_MIGRATIONS=true they run once
+        // at bootstrap (main.ts) under a Postgres advisory lock, so multiple App
+        // Service instances starting concurrently can't race on schema DDL.
+        migrationsRun: false,
         logging: config.get("NODE_ENV") === "development",
       }),
     }),
@@ -101,6 +105,9 @@ import { ScheduleModule } from "@nestjs/schedule";
         ),
       }),
     }),
+
+    // Infrastructure
+    RedisModule,
 
     // Feature modules
     StripeModule.forRoot(),

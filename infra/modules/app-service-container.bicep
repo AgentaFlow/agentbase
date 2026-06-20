@@ -39,6 +39,9 @@ param vnetSubnetId string = ''
 @description('Keep the app warm (Always On). Not supported on Free/Shared tiers.')
 param alwaysOn bool = true
 
+@description('IP security restrictions — pass an allow-list to lock inbound traffic. Empty = Azure default (allow all).')
+param ipSecurityRestrictions array = []
+
 // Settings common to every container app — merged with the caller's app-specific settings.
 var baseAppSettings = [
   {
@@ -84,10 +87,14 @@ resource app 'Microsoft.Web/sites@2023-12-01' = {
       http20Enabled: true
       healthCheckPath: healthCheckPath
       vnetRouteAllEnabled: empty(vnetSubnetId) ? false : true
+      ipSecurityRestrictions: empty(ipSecurityRestrictions) ? null : ipSecurityRestrictions
       appSettings: concat(baseAppSettings, appSettings)
     }
   }
 }
+
+@description('Resource ID (for private endpoints and cross-module references)')
+output id string = app.id
 
 @description('System-assigned managed identity principal ID (for RBAC)')
 output principalId string = app.identity.principalId

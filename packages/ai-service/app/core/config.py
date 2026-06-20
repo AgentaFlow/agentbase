@@ -9,6 +9,9 @@ class Settings(BaseSettings):
     AI_SERVICE_PORT: int = 8000
     FRONTEND_URL: str = "http://localhost:3000"
     CORE_API_URL: str = "http://localhost:3001"
+    # Shared secret presented by core on every internal call. When empty (local dev),
+    # the token check is skipped so local development works without setup.
+    INTERNAL_SERVICE_TOKEN: Optional[str] = None
 
     # MongoDB
     MONGO_URI: str = "mongodb://agentbase:agentbase_dev@localhost:27017/agentbase?authSource=admin"

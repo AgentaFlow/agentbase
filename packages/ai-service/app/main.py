@@ -3,6 +3,7 @@
 import time
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 
 from app.core.config import settings
@@ -32,14 +33,40 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS
+# CORS — restricted to core API only. The browser never calls the AI service directly;
+# all requests flow through the NestJS core, which proxies to this service.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.FRONTEND_URL, settings.CORE_API_URL],
+    allow_origins=[settings.CORE_API_URL],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Health paths that must remain open for App Service probes and internal checks.
+_OPEN_PATHS = {"/api/health", "/api/ai/health", "/docs", "/openapi.json", "/redoc"}
+
+
+@app.middleware("http")
+async def internal_token_auth(request: Request, call_next):
+    """Enforce X-Internal-Token on all /api/ai/* routes when token is configured.
+
+    Skipped when INTERNAL_SERVICE_TOKEN is not set (local dev). Health endpoints
+    are always open so App Service probes can reach them without credentials.
+    """
+    path = request.url.path
+    if (
+        settings.INTERNAL_SERVICE_TOKEN
+        and path.startswith("/api/ai/")
+        and path not in _OPEN_PATHS
+    ):
+        token = request.headers.get("x-internal-token")
+        if not token or token != settings.INTERNAL_SERVICE_TOKEN:
+            return JSONResponse(
+                status_code=401,
+                content={"detail": "Unauthorized"},
+            )
+    return await call_next(request)
 
 
 @app.middleware("http")
