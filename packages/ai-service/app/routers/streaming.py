@@ -1,10 +1,12 @@
 """Streaming AI response endpoint using Server-Sent Events."""
 
+import asyncio
+import json
+from typing import Optional
+
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-from typing import Optional
-import json
 
 from app.core.config import settings
 from app.services.ai_providers import (
@@ -63,15 +65,16 @@ async def stream_message(conversation_id: str, req: StreamMessageRequest):
     )
 
     async def event_generator():
+        from datetime import datetime
+
         full_response = ""
+        stream = provider.chat_stream(chat_request)
         try:
-            async for chunk in provider.chat_stream(chat_request):
+            async for chunk in stream:
                 full_response += chunk
                 yield f"data: {json.dumps({'type': 'chunk', 'content': chunk})}\n\n"
 
-            # Store messages after stream completes
-            from datetime import datetime
-
+            # Stream completed normally — persist the exchange to MongoDB.
             user_msg = {
                 "role": "user",
                 "content": req.content,
@@ -97,8 +100,18 @@ async def stream_message(conversation_id: str, req: StreamMessageRequest):
             )
 
             yield f"data: {json.dumps({'type': 'done', 'content': full_response})}\n\n"
+
+        except (asyncio.CancelledError, GeneratorExit):
+            # Client disconnected mid-stream. Re-raise so Starlette closes the
+            # response cleanly; the finally block ensures the upstream generator
+            # releases its connection regardless of the exit path.
+            raise
         except Exception as e:
             yield f"data: {json.dumps({'type': 'error', 'content': str(e)})}\n\n"
+        finally:
+            # aclose() is idempotent — safe to call even if the async for loop
+            # already closed the generator on normal exit or exception.
+            await stream.aclose()
 
     return StreamingResponse(
         event_generator(),

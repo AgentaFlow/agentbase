@@ -247,10 +247,14 @@ export class WorkflowsService {
         const systemPrompt = this.interpolate(config.systemPrompt || '', context);
 
         const aiUrl = this.config.get('AI_SERVICE_URL', 'http://localhost:8000');
+        const internalToken = this.config.get('INTERNAL_SERVICE_TOKEN');
         try {
           const res = await fetch(`${aiUrl}/api/ai/chat`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              ...(internalToken && { 'X-Internal-Token': internalToken }),
+            },
             body: JSON.stringify({
               message: prompt,
               systemPrompt,

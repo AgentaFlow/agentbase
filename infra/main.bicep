@@ -229,6 +229,21 @@ module networking 'modules/networking.bicep' = if (deployPrivateNetworking) {
 // so the non-null assertion is safe.
 var appSubnetId = deployPrivateNetworking ? networking!.outputs.appSubnetId : ''
 
+// In prod (deployPrivateNetworking=true), restrict AI service inbound to the core app's
+// VNet integration subnet only. Staging relies on the app-layer INTERNAL_SERVICE_TOKEN
+// (WS1A) until VNet integration is promoted to staging in a follow-up.
+var aiIpRestrictions = deployPrivateNetworking
+  ? [
+      {
+        name: 'allow-core-vnet'
+        priority: 100
+        action: 'Allow'
+        vnetSubnetResourceId: networking!.outputs.appSubnetId
+        description: 'Allow inbound from App Service VNet integration subnet (core app only)'
+      }
+    ]
+  : []
+
 // ----------------------------------------------------------------------------
 // Compute — App Service Plan + 3 container apps
 // ----------------------------------------------------------------------------
@@ -265,8 +280,9 @@ module coreApp 'modules/app-service-container.bicep' = {
       { name: 'AI_SERVICE_URL', value: 'https://${aiHost}' }
       { name: 'ENABLE_SWAGGER', value: 'false' }
       // Run pending TypeORM migrations on startup. Reaches the DB from inside Azure
-      // (works for prod's private network, where a pipeline agent cannot). Idempotent;
-      // pin to a single instance or add a migration lock before enabling autoscale.
+      // (works for prod's private network, where a pipeline agent cannot). Safe under
+      // autoscale: migrations run at bootstrap behind a Postgres advisory lock
+      // (packages/core/src/main.ts), so concurrent instances serialize the DDL.
       { name: 'RUN_MIGRATIONS', value: 'true' }
       { name: 'MARKETPLACE_URL', value: marketplaceUrl }
       // PostgreSQL
@@ -299,6 +315,8 @@ module coreApp 'modules/app-service-container.bicep' = {
       // Payments
       { name: 'STRIPE_SECRET_KEY', value: kvRef(kvUri, 'stripe-secret-key') }
       { name: 'STRIPE_WEBHOOK_SECRET', value: kvRef(kvUri, 'stripe-webhook-secret') }
+      // Service-to-service auth: core presents this token to AI service on every internal call
+      { name: 'INTERNAL_SERVICE_TOKEN', value: kvRef(kvUri, 'internal-service-token') }
     ]
   }
 }
@@ -336,6 +354,7 @@ module aiApp 'modules/app-service-container.bicep' = {
     appInsightsConnectionString: monitoring.outputs.connectionString
     healthCheckPath: '/api/ai/health'
     vnetSubnetId: appSubnetId
+    ipSecurityRestrictions: aiIpRestrictions
     appSettings: [
       { name: 'MONGO_URI', value: kvRef(kvUri, 'mongo-uri') }
       { name: 'OPENAI_API_KEY', value: kvRef(kvUri, 'openai-api-key') }
@@ -344,7 +363,10 @@ module aiApp 'modules/app-service-container.bicep' = {
       { name: 'HUGGINGFACE_API_KEY', value: kvRef(kvUri, 'huggingface-api-key') }
       // CORS allow_origins — must match the actual deployed URLs, not localhost defaults
       { name: 'CORE_API_URL', value: 'https://${coreHost}' }
-      { name: 'FRONTEND_URL', value: 'https://${frontendHost}' }
+      // FRONTEND_URL intentionally omitted — browser never calls AI service directly;
+      // CORS is restricted to CORE_API_URL only (see ai-service/app/main.py)
+      // Service-to-service auth: AI service validates this token on all /api/ai/* routes
+      { name: 'INTERNAL_SERVICE_TOKEN', value: kvRef(kvUri, 'internal-service-token') }
     ]
   }
 }
@@ -384,6 +406,24 @@ module aiRbac 'modules/rbac.bicep' = {
     keyVaultName: keyVault.outputs.name
     assignKeyVaultRole: true
     assignStorageRole: false
+  }
+}
+
+// ----------------------------------------------------------------------------
+// AI service private endpoint (prod only)
+// Deployed as a separate module after both aiApp and networking to avoid the
+// circular dependency that would arise from passing aiApp.outputs.id into the
+// networking module (which aiApp already depends on for its VNet subnet).
+// ----------------------------------------------------------------------------
+
+module aiServicePe 'modules/pe-ai-service.bicep' = if (deployPrivateNetworking) {
+  name: 'aiServicePe'
+  params: {
+    location: location
+    tags: tags
+    aiAppId: aiApp.outputs.id
+    peSubnetId: networking!.outputs.peSubnetId
+    vnetId: networking!.outputs.vnetId
   }
 }
 

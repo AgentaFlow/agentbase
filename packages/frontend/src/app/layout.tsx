@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import { Providers } from './providers';
+import { Analytics } from '@/components/analytics/Analytics';
+import { CookieConsent } from '@/components/analytics/CookieConsent';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -15,7 +17,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen bg-slate-50">
-        <Providers>{children}</Providers>
+        <Providers>
+          {children}
+          <CookieConsent />
+          <Analytics />
+        </Providers>
       </body>
     </html>
   );

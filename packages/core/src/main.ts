@@ -2,8 +2,48 @@ import { NestFactory } from "@nestjs/core";
 import { ValidationPipe, Logger, VersioningType } from "@nestjs/common";
 import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
 import { Logger as PinoLogger } from "nestjs-pino";
+import { DataSource } from "typeorm";
 import { AppModule } from "./app.module";
 import helmet from "helmet";
+
+// Arbitrary, application-specific advisory-lock key. Any instance that wants to
+// run migrations must hold this lock first, so concurrent boots serialize.
+const MIGRATION_LOCK_KEY = 4915623;
+
+/**
+ * Run pending TypeORM migrations under a Postgres advisory lock.
+ *
+ * App Service plans (B2/P1v2) support autoscale, so several core instances can
+ * boot at once. Without serialization each would see the same pending migrations
+ * and race on schema-altering DDL. The advisory lock gates entry to a single
+ * instance at a time; the `migrations` table makes the work idempotent (later
+ * holders find nothing pending and exit cleanly).
+ */
+async function runMigrationsWithLock(dataSource: DataSource, logger: Logger) {
+  const queryRunner = dataSource.createQueryRunner();
+  await queryRunner.connect();
+  try {
+    // Session-scoped lock — blocks other instances until released below.
+    await queryRunner.query("SELECT pg_advisory_lock($1)", [
+      MIGRATION_LOCK_KEY,
+    ]);
+    const ran = await dataSource.runMigrations({ transaction: "all" });
+    if (ran.length) {
+      logger.log(
+        `Applied ${ran.length} migration(s): ${ran
+          .map((m) => m.name)
+          .join(", ")}`,
+      );
+    } else {
+      logger.log("No pending migrations");
+    }
+  } finally {
+    await queryRunner.query("SELECT pg_advisory_unlock($1)", [
+      MIGRATION_LOCK_KEY,
+    ]);
+    await queryRunner.release();
+  }
+}
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -107,6 +147,17 @@ async function bootstrap() {
 
   // Graceful shutdown
   app.enableShutdownHooks();
+
+  // Run DB migrations once, serialized across instances via a Postgres advisory
+  // lock, before accepting traffic. See runMigrationsWithLock above.
+  if (process.env.RUN_MIGRATIONS === "true") {
+    try {
+      await runMigrationsWithLock(app.get(DataSource), logger);
+    } catch (err) {
+      logger.error("Migration run failed — aborting startup", err as Error);
+      throw err;
+    }
+  }
 
   const port = process.env.APP_PORT || 3001;
   await app.listen(port);

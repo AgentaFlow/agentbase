@@ -133,3 +133,9 @@ resource endpointDnsGroups 'Microsoft.Network/privateEndpoints/privateDnsZoneGro
 
 @description('App Service regional VNet integration subnet ID')
 output appSubnetId string = appSubnet.id
+
+@description('Private endpoint subnet ID')
+output peSubnetId string = peSubnet.id
+
+@description('VNet resource ID (for private DNS zone VNet links)')
+output vnetId string = vnet.id

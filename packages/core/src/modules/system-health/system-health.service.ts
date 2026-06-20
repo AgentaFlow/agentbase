@@ -97,9 +97,15 @@ export class SystemHealthService {
     const start = Date.now();
     try {
       const aiUrl = process.env.AI_SERVICE_URL || 'http://localhost:8000';
+      const internalToken = process.env.INTERNAL_SERVICE_TOKEN;
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 5000);
-      const res = await fetch(`${aiUrl}/api/ai/health`, { signal: controller.signal });
+      const res = await fetch(`${aiUrl}/api/ai/health`, {
+        signal: controller.signal,
+        headers: {
+          ...(internalToken && { 'X-Internal-Token': internalToken }),
+        },
+      });
       clearTimeout(timeout);
       if (res.ok) {
         return { name: 'AI Service', status: 'healthy', latencyMs: Date.now() - start };

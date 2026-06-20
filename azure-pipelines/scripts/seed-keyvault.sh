@@ -73,6 +73,9 @@ ensure_secret jwt-secret "$(or_placeholder "${JWT_SECRET:-$(gen)}")"
 ensure_secret jwt-refresh-secret "$(or_placeholder "${JWT_REFRESH_SECRET:-$(gen)}")"
 ensure_secret encryption-key "$(or_placeholder "${ENCRYPTION_KEY:-$(gen)}")"
 ensure_secret plugin-settings-encryption-key "$(or_placeholder "${PLUGIN_SETTINGS_ENCRYPTION_KEY:-$(gen)}")"
+# Shared secret for core→AI service calls. Generated independently from JWT_SECRET;
+# never derived from it. Rotate independently when needed.
+ensure_secret internal-service-token "$(gen)"
 
 # --- Optional integration secrets (placeholder keeps the KV reference resolvable) ---
 set_secret stripe-secret-key "$(or_placeholder "${STRIPE_SECRET_KEY:-}")"

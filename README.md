@@ -61,7 +61,7 @@ agentbase/
 | **SQL Database**   | PostgreSQL 16                                 |
 | **Document DB**    | MongoDB 7                                     |
 | **Cache**          | Redis 7                                       |
-| **Infrastructure** | Docker, Nginx, DigitalOcean Kubernetes (DOKS) |
+| **Infrastructure** | Docker · Azure App Service + Bicep IaC        |
 | **License**        | GPL-3.0                                       |
 
 ## Quick Start

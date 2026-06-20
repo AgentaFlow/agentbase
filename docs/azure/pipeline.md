@@ -19,13 +19,27 @@ az group create -n rg-agentbase-staging -l eastus
 az group create -n rg-agentbase-prod    -l eastus
 ```
 
-### 1.2 Service connection
+### 1.2 Service connections
 
-Create an Azure Resource Manager **service connection** (Project Settings →
-Service connections) scoped to the subscription, e.g. named
-`agentbase-azure`. Grant its service principal **Contributor** + **User Access
-Administrator** on both resource groups (User Access Administrator is required
-because the Bicep creates **role assignments** in `rbac.bicep`).
+Create **two** Azure Resource Manager service connections (Project Settings →
+Service connections), one per environment. Scope each to its resource group only
+(not the whole subscription) for least-privilege isolation.
+
+| ADO variable | Connection name (example) | Scoped to |
+|---|---|---|
+| `AZURE_SERVICE_CONNECTION_STAGING` | `agentbase-staging-sc` | `RG_STAGING` |
+| `AZURE_SERVICE_CONNECTION_PROD` | `agentbase-prod-sc` | `RG_PROD` |
+
+Grant each service principal **two roles** on its resource group:
+- **Owner** — required because `rbac.bicep` creates role assignments (Contributor
+  alone can't grant roles; you need User Access Administrator, which Owner includes).
+- **Key Vault Secrets Officer** (at RG scope, not KV resource scope) — data-plane
+  secret writes. Scoped to the RG so the role inherits to the Key Vault once
+  Bicep creates it on the first run (the KV doesn't exist yet when this is set up).
+
+For the prod service connection: choose **"Specific pipelines"** rather than
+"Grant access to all pipelines" in the security settings, and add only the
+`agentbase-deploy.yml` pipeline.
 
 ### 1.3 Variable group
 
@@ -34,7 +48,8 @@ Library) with:
 
 | Variable | Secret? | Example / purpose |
 |----------|:------:|-------------------|
-| `AZURE_SERVICE_CONNECTION` | no | `agentbase-azure` |
+| `AZURE_SERVICE_CONNECTION_STAGING` | no | `agentbase-staging-sc` |
+| `AZURE_SERVICE_CONNECTION_PROD` | no | `agentbase-prod-sc` |
 | `RG_STAGING` | no | `rg-agentbase-staging` |
 | `RG_PROD` | no | `rg-agentbase-prod` |
 | `PG_ADMIN_PASSWORD` | **yes** | PostgreSQL admin password (≥ 12 chars, complex) |
@@ -44,11 +59,13 @@ Library) with:
 | `OPENAI_API_KEY` | yes | *(optional)* AI provider |
 | `ANTHROPIC_API_KEY` | yes | *(optional)* |
 | `GEMINI_API_KEY` | yes | *(optional)* |
+| `HUGGINGFACE_API_KEY` | yes | *(optional)* |
 
 Optional secrets left undefined are stored in Key Vault as `not-configured`
 placeholders so their Key Vault references still resolve. `jwt-secret`,
-`jwt-refresh-secret`, `encryption-key`, and `plugin-settings-encryption-key`
-are **generated once** by the seed script and preserved across deploys.
+`jwt-refresh-secret`, `encryption-key`, `plugin-settings-encryption-key`, and
+`internal-service-token` are **generated once** by the seed script and preserved
+across deploys — do not add these to the variable group.
 
 ### 1.4 Environments + approval gate
 
@@ -143,7 +160,79 @@ az group delete --name rg-agentbase-staging --yes --no-wait
 
 ---
 
-## 6. Local validation (before pushing)
+## 6. Prelaunch checklist
+
+**This checklist must be signed off before the first production push.**
+Items marked **[GATE]** are hard blockers — the checklist cannot be signed
+off while any GATE item is unresolved. No-go audit findings become known issues
+that slip under launch pressure without explicit gates here.
+
+### Security
+
+- [ ] **[GATE]** `INTERNAL_SERVICE_TOKEN` is in Key Vault (`internal-service-token`
+      secret exists and is not `not-configured`) for both staging and prod.
+- [ ] **[GATE]** AI service `/api/ai/conversations` returns 401 without the token;
+      returns 200 with the correct `X-Internal-Token` header.
+- [ ] **[GATE]** Rate limiting enforced globally: verify with concurrent requests
+      across multiple instances that the Redis-backed counter triggers 429.
+- [ ] **[GATE]** Encryption key present in Key Vault (`encryption-key`) and is a
+      64-character hex string — test BYOK provider key save/load round-trip.
+- [ ] All security audit categories in `docs/azure/prelaunch-security-audit.md`
+      show **GO**.
+
+### Network lockdown (prod)
+
+- [ ] **[GATE]** AI service not reachable from the public internet in prod. Test:
+      `curl https://<aiAppName>.azurewebsites.net/api/ai/conversations` from
+      outside Azure — must return 403 or TCP connection refused (private endpoint).
+- [ ] **[GATE]** Core→AI calls succeed through the VNet path in prod.
+- [ ] AI service `ipSecurityRestrictions` applied: Azure portal → AI app →
+      Networking → Access Restrictions — only `snet-app` allow rule present.
+
+### SSE streaming
+
+- [ ] SSE stream completes normally end-to-end through the core proxy:
+      `curl -N https://<coreUrl>/v1/chat -H 'X-API-Key: <key>' -d '{"message":"hello"}'`
+- [ ] **[GATE — disconnect cleanup]** Manual verification: run the above curl, kill
+      it mid-stream with Ctrl-C, then check AI service logs for unclosed generator
+      errors. No `GeneratorExit` unhandled traces should appear.
+- [ ] No response buffering: chunks arrive incrementally (not in one burst after
+      stream ends). If on App Service, confirm `X-Accel-Buffering: no` header
+      is present in the response.
+
+### Analytics / consent
+
+- [ ] Cookie consent banner appears on first visit (no prior localStorage entry).
+- [ ] GA4 and UET scripts are **not** present in page source before consent is
+      given — verify with browser devtools network tab.
+- [ ] After accepting consent, GA4/UET scripts load and fire pageview events.
+- [ ] "Manage cookies" resets consent and banner reappears on reload.
+
+### Pipeline
+
+- [ ] `az bicep build --file infra/main.bicep` passes (no errors, warnings OK).
+- [ ] Validate stage (`what-if`) completes green on a staging run.
+- [ ] Staging deploy green with all three health checks passing.
+- [ ] Manual approval gate active on `agentbase-prod` environment in ADO.
+- [ ] Prod service connection uses "Specific pipelines" authorization.
+- [ ] Rollback procedure tested: re-point an app at a previous tag and verify
+      it comes up healthy.
+
+### Sign-off
+
+| Area | Signed off by | Date |
+| --- | --- | --- |
+| Security | | |
+| Network lockdown (prod) | | |
+| SSE streaming | | |
+| Analytics / consent | | |
+| Pipeline | | |
+
+All GATE items resolved and all rows signed off before merging to production.
+
+---
+
+## 7. Local validation (before pushing)
 
 ```bash
 az bicep build --file infra/main.bicep                 # lint

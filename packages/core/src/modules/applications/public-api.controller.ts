@@ -124,12 +124,17 @@ export class PublicApiController {
 
     // Forward to AI service (proxy pattern)
     const AI_URL = process.env.AI_SERVICE_URL || "http://localhost:8000";
+    const internalToken = process.env.INTERNAL_SERVICE_TOKEN;
+    const internalHeaders: Record<string, string> = {
+      "Content-Type": "application/json",
+      ...(internalToken && { "X-Internal-Token": internalToken }),
+    };
 
     let conversationId = body.conversationId;
     if (!conversationId) {
       const convRes = await fetch(`${AI_URL}/api/ai/conversations`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: internalHeaders,
         body: JSON.stringify({
           application_id: app.id,
           user_id: body.sessionId || "anonymous",
@@ -157,7 +162,7 @@ export class PublicApiController {
       `${AI_URL}/api/ai/conversations/${conversationId}/messages`,
       {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: internalHeaders,
         body: JSON.stringify(msgPayload),
       },
     );
@@ -186,7 +191,12 @@ export class PublicApiController {
   @ApiOperation({ summary: "Get conversation history" })
   async getConversation(@Param("conversationId") id: string) {
     const AI_URL = process.env.AI_SERVICE_URL || "http://localhost:8000";
-    const res = await fetch(`${AI_URL}/api/ai/conversations/${id}`);
+    const internalToken = process.env.INTERNAL_SERVICE_TOKEN;
+    const res = await fetch(`${AI_URL}/api/ai/conversations/${id}`, {
+      headers: {
+        ...(internalToken && { "X-Internal-Token": internalToken }),
+      },
+    });
     if (!res.ok) throw new NotFoundException("Conversation not found");
     return res.json();
   }

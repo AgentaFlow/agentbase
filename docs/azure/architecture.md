@@ -64,11 +64,10 @@ graph LR
 
   user --> fe --> core
   dev --> core
-  core --> ai --> llm
+  core -->|X-Internal-Token| ai --> llm
   core --> data
   ai --> data
   core -. MARKETPLACE_URL .-> mkt
-  fe --> ai
 ```
 
 The core platform connects to the Marketplace over `MARKETPLACE_URL` (dashed —
@@ -109,11 +108,14 @@ graph TD
 ```
 
 In **prod**, `networking.bicep` adds a VNet (app-integration subnet + private-
-endpoint subnet), private endpoints for PostgreSQL, Cosmos, Redis, Blob and Key
-Vault, and the matching private DNS zones — so the data tier has **no public
-network access** (constitution Principle II). In **staging**, the data services
-keep public access with an "allow Azure services" firewall rule to minimise cost
-and complexity.
+endpoint subnet), private endpoints for PostgreSQL, Cosmos, Redis, Blob, Key
+Vault, **and the AI service App Service site** — so the data tier and the AI
+service have **no public network access** (constitution Principle II). The AI
+service further restricts inbound to `snet-app` only via `ipSecurityRestrictions`.
+In **staging**, the data services keep public access with an "allow Azure
+services" firewall rule; the AI service is protected by the app-layer
+`INTERNAL_SERVICE_TOKEN` only (network restriction deferred until VNet
+integration is promoted to staging).
 
 ---
 
@@ -166,17 +168,18 @@ Principles applied:
 |------------------|-----------------------|-------------|--------|
 | `postgres-password` | `POSTGRES_PASSWORD` | core | variable group |
 | `mongo-uri` | `MONGO_URI` | core, ai | `az cosmosdb keys list` |
-| `redis-password` | `REDIS_PASSWORD` | core¹ | `az redis list-keys` |
+| `redis-password` | `REDIS_PASSWORD` | core | `az redis list-keys` |
 | `jwt-secret`, `jwt-refresh-secret` | `JWT_SECRET`, `JWT_REFRESH_SECRET` | core | generated once |
 | `encryption-key`, `plugin-settings-encryption-key` | same (upper-snake) | core | generated once |
+| `internal-service-token` | `INTERNAL_SERVICE_TOKEN` | core + ai | generated once, **independent** from jwt-secret |
 | `stripe-secret-key`, `stripe-webhook-secret` | `STRIPE_*` | core | variable group (optional) |
-| `openai-api-key`, `anthropic-api-key`, `gemini-api-key` | `*_API_KEY` | ai | variable group (optional) |
+| `openai-api-key`, `anthropic-api-key`, `gemini-api-key`, `huggingface-api-key` | `*_API_KEY` | ai | variable group (optional) |
 
-¹ Redis settings are injected and ready; the core's rate limiter is currently
-in-memory (`common/interceptors/rate-limit.interceptor.ts`). Swapping it for a
-Redis-backed limiter needs no infra change — `REDIS_HOST/PORT/TLS/PASSWORD` are
-already present. Secrets are seeded idempotently by
+Secrets are seeded idempotently by
 [`azure-pipelines/scripts/seed-keyvault.sh`](../../azure-pipelines/scripts/seed-keyvault.sh).
+`internal-service-token` uses `ensure_secret` (generated once, never overwritten
+automatically) and rotates independently from JWT keys — use different rotation
+cadences and ownership.
 
 ---
 
