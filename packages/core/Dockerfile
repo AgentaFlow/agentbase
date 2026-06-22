@@ -1,17 +1,22 @@
 # ---- Build Stage ----
-FROM node:20-alpine AS builder
+FROM mcr.microsoft.com/azurelinux/base/nodejs:20 AS builder
 WORKDIR /app
 
 # Install pnpm
 RUN corepack enable && corepack prepare pnpm@9 --activate
 
-# Copy workspace config
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* ./
+# Copy workspace config and registry settings
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* .npmrc ./
 COPY packages/core/package.json packages/core/
 COPY packages/shared/package.json packages/shared/
 
-# Install dependencies
+# Inject Azure Artifacts auth token; strip it after install so the layer has no creds
+ARG AZURE_ARTIFACTS_TOKEN
+RUN if [ -n "${AZURE_ARTIFACTS_TOKEN}" ]; then \
+      echo "//pkgs.dev.azure.com/agentaflow/agentbase/_packaging/python/npm/registry/:_authToken=${AZURE_ARTIFACTS_TOKEN}" >> .npmrc; \
+    fi
 RUN pnpm install --frozen-lockfile 2>/dev/null || pnpm install
+RUN sed -i '/_authToken/d' .npmrc
 
 # Copy source
 COPY packages/shared packages/shared
@@ -23,11 +28,12 @@ WORKDIR /app/packages/core
 RUN npx nest build
 
 # ---- Production Stage ----
-FROM node:20-alpine AS production
+FROM mcr.microsoft.com/azurelinux/base/nodejs:20 AS production
 WORKDIR /app
 
 RUN corepack enable && corepack prepare pnpm@9 --activate
-RUN apk add --no-cache tini
+# wget for the HEALTHCHECK; shadow-utils provides groupadd/useradd (not in the base image)
+RUN tdnf install -y wget shadow-utils && tdnf clean all
 
 # Copy built app
 COPY --from=builder /app/packages/core/dist ./dist
@@ -35,7 +41,7 @@ COPY --from=builder /app/packages/core/package.json ./
 COPY --from=builder /app/node_modules ./node_modules
 
 # Non-root user
-RUN addgroup -g 1001 -S agentbase && adduser -S agentbase -u 1001
+RUN groupadd -g 1001 agentbase && useradd -u 1001 -g agentbase -s /sbin/nologin -M agentbase
 USER agentbase
 
 ENV NODE_ENV=production
@@ -44,5 +50,4 @@ EXPOSE 3001
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s \
   CMD wget -q --spider http://localhost:3001/api/health || exit 1
 
-ENTRYPOINT ["/sbin/tini", "--"]
 CMD ["node", "dist/main.js"]
