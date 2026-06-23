@@ -2,7 +2,7 @@
 FROM mcr.microsoft.com/azurelinux/base/nodejs:20 AS builder
 WORKDIR /app
 
-RUN corepack enable && corepack prepare pnpm@9 --activate
+RUN npm install -g pnpm@9
 
 # Copy workspace config and registry settings
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* .npmrc ./
