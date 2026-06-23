@@ -8,6 +8,7 @@
     "appServicePlanSku": { "value": "B2" },
     "postgresLocation": { "value": "eastus2" },
     "deployPrivateNetworking": { "value": false },
-    "marketplaceUrl": { "value": "https://marketplace-staging.agentbase.dev/api/v1" }
+    "marketplaceUrl": { "value": "https://marketplace-staging.agentbase.dev/api/v1" },
+    "pipelineSpOid": { "value": "f1030588-91fd-4984-8478-f08a70e743c4" }
   }
 }

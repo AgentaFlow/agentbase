@@ -60,6 +60,9 @@ param marketplaceUrl string = 'https://marketplace.agentbase.dev/api/v1'
 @description('Azure region for PostgreSQL Flexible Server. Defaults to location but can be overridden per-environment when the subscription lacks quota in the primary region.')
 param postgresLocation string = location
 
+@description('Object ID of the pipeline service principal that seeds Key Vault secrets. Granted Key Vault Secrets Officer so it can write secrets during deployment.')
+param pipelineSpOid string = ''
+
 // ----------------------------------------------------------------------------
 // Variables — naming & tags
 // ----------------------------------------------------------------------------
@@ -410,6 +413,23 @@ module aiRbac 'modules/rbac.bicep' = {
     assignKeyVaultRole: true
     assignStorageRole: false
   }
+}
+
+// Grant the pipeline service principal Key Vault Secrets Officer so it can write
+// secrets during deployment (seed-keyvault.sh). Apps use Secrets User (read-only).
+var kvSecretsOfficerRoleId = 'b86a8fe4-44ce-4948-aee5-eccb2c155cd7'
+resource kvPipelineRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(pipelineSpOid)) {
+  scope: keyVaultRes
+  name: guid(keyVaultRes.id, pipelineSpOid, kvSecretsOfficerRoleId)
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', kvSecretsOfficerRoleId)
+    principalId: pipelineSpOid
+    principalType: 'ServicePrincipal'
+  }
+}
+
+resource keyVaultRes 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
+  name: keyVaultName
 }
 
 // ----------------------------------------------------------------------------

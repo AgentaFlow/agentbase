@@ -6,7 +6,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.43.8.12551",
-      "templateHash": "7871493666138067292"
+      "templateHash": "4930327647787189307"
     }
   },
   "functions": [
@@ -103,6 +103,20 @@
       "metadata": {
         "description": "Marketplace API base URL the core platform connects to (separate deployment)"
       }
+    },
+    "postgresLocation": {
+      "type": "string",
+      "defaultValue": "[parameters('location')]",
+      "metadata": {
+        "description": "Azure region for PostgreSQL Flexible Server. Defaults to location but can be overridden per-environment when the subscription lacks quota in the primary region."
+      }
+    },
+    "pipelineSpOid": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Object ID of the pipeline service principal that seeds Key Vault secrets. Granted Key Vault Secrets Officer so it can write secrets during deployment."
+      }
     }
   },
   "variables": {
@@ -127,9 +141,28 @@
     "aiAppName": "[format('app-{0}-ai-{1}-{2}', parameters('project'), parameters('environment'), parameters('uniqueSuffix'))]",
     "coreHost": "[format('{0}.azurewebsites.net', variables('coreAppName'))]",
     "frontendHost": "[format('{0}.azurewebsites.net', variables('frontendAppName'))]",
-    "aiHost": "[format('{0}.azurewebsites.net', variables('aiAppName'))]"
+    "aiHost": "[format('{0}.azurewebsites.net', variables('aiAppName'))]",
+    "kvSecretsOfficerRoleId": "b86a8fe4-44ce-4948-aee5-eccb2c155cd7"
   },
   "resources": {
+    "kvPipelineRole": {
+      "condition": "[not(empty(parameters('pipelineSpOid')))]",
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "scope": "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]",
+      "name": "[guid(resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName')), parameters('pipelineSpOid'), variables('kvSecretsOfficerRoleId'))]",
+      "properties": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('kvSecretsOfficerRoleId'))]",
+        "principalId": "[parameters('pipelineSpOid')]",
+        "principalType": "ServicePrincipal"
+      }
+    },
+    "keyVaultRes": {
+      "existing": true,
+      "type": "Microsoft.KeyVault/vaults",
+      "apiVersion": "2023-07-01",
+      "name": "[variables('keyVaultName')]"
+    },
     "monitoring": {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2025-04-01",
@@ -621,7 +654,7 @@
             "value": "[variables('postgresName')]"
           },
           "location": {
-            "value": "[parameters('location')]"
+            "value": "[parameters('postgresLocation')]"
           },
           "tags": {
             "value": "[variables('tags')]"
