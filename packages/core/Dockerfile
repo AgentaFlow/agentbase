@@ -3,7 +3,7 @@ FROM mcr.microsoft.com/azurelinux/base/nodejs:20 AS builder
 WORKDIR /app
 
 # Install pnpm
-RUN corepack enable && corepack prepare pnpm@9 --activate
+RUN npm install -g pnpm@9
 
 # Copy workspace config and registry settings
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* .npmrc ./
@@ -31,7 +31,7 @@ RUN npx nest build
 FROM mcr.microsoft.com/azurelinux/base/nodejs:20 AS production
 WORKDIR /app
 
-RUN corepack enable && corepack prepare pnpm@9 --activate
+RUN npm install -g pnpm@9
 RUN tdnf install -y wget shadow-utils && tdnf clean all
 
 # Copy built app
