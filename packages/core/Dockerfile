@@ -1,5 +1,5 @@
 # ---- Build Stage ----
-FROM mcr.microsoft.com/cbl-mariner/base/nodejs:20 AS builder
+FROM mcr.microsoft.com/azurelinux/base/nodejs:20 AS builder
 WORKDIR /app
 
 # Install pnpm
@@ -28,11 +28,11 @@ WORKDIR /app/packages/core
 RUN npx nest build
 
 # ---- Production Stage ----
-FROM mcr.microsoft.com/cbl-mariner/base/nodejs:20 AS production
+FROM mcr.microsoft.com/azurelinux/base/nodejs:20 AS production
 WORKDIR /app
 
 RUN corepack enable && corepack prepare pnpm@9 --activate
-RUN tdnf install -y wget
+RUN tdnf install -y wget shadow-utils && tdnf clean all
 
 # Copy built app
 COPY --from=builder /app/packages/core/dist ./dist

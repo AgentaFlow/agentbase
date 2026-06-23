@@ -1,5 +1,5 @@
 # ---- Build Stage ----
-FROM mcr.microsoft.com/cbl-mariner/base/python:3.12 AS builder
+FROM mcr.microsoft.com/azurelinux/base/python:3.12 AS builder
 WORKDIR /app
 
 COPY packages/ai-service/requirements.txt .
@@ -11,13 +11,13 @@ RUN pip install --no-cache-dir \
       --target=/deps -r requirements.txt
 
 # ---- Production Stage ----
-FROM mcr.microsoft.com/cbl-mariner/base/python:3.12 AS production
+FROM mcr.microsoft.com/azurelinux/base/python:3.12 AS production
 WORKDIR /app
 
+RUN tdnf install -y wget shadow-utils && tdnf clean all
 RUN groupadd -r agentbase && useradd -r -g agentbase -s /sbin/nologin -M agentbase
-RUN tdnf install -y wget
 
-COPY --from=builder /deps /usr/local/lib/python3.12/site-packages
+COPY --from=builder /deps /usr/lib/python3.12/site-packages
 COPY packages/ai-service/app ./app
 
 USER agentbase
