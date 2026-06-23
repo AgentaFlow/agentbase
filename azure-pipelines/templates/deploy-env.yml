@@ -147,4 +147,4 @@ stages:
                   inputs:
                     targetType: filePath
                     filePath: azure-pipelines/scripts/health-check.sh
-                    arguments: 'core=$(CORE_URL)/api/health web=$(WEB_URL)/ ai=$(AI_URL)/api/ai/health'
+                    arguments: 'core=$(CORE_URL)/api/health web=$(WEB_URL)/ ai=$(AI_URL)/api/health'

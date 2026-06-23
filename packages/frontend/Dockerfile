@@ -35,9 +35,12 @@ WORKDIR /app
 
 RUN tdnf install -y wget shadow-utils && tdnf clean all
 
+# Next.js standalone output preserves the monorepo layout: server.js and its
+# node_modules land under packages/frontend/. Static and public assets must sit
+# next to server.js for the standalone server to find them.
 COPY --from=builder /app/packages/frontend/.next/standalone ./
-COPY --from=builder /app/packages/frontend/.next/static ./.next/static
-COPY --from=builder /app/packages/frontend/public ./public
+COPY --from=builder /app/packages/frontend/.next/static ./packages/frontend/.next/static
+COPY --from=builder /app/packages/frontend/public ./packages/frontend/public
 
 RUN groupadd -g 1001 agentbase && useradd -u 1001 -g agentbase -s /sbin/nologin -M agentbase
 USER agentbase
@@ -48,4 +51,4 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s \
   CMD wget -q --spider http://localhost:3000/ || exit 1
 
-CMD ["node", "server.js"]
+CMD ["node", "packages/frontend/server.js"]

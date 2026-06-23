@@ -358,7 +358,7 @@ module aiApp 'modules/app-service-container.bicep' = {
     acrLoginServer: acr.outputs.loginServer
     websitesPort: 8000
     appInsightsConnectionString: monitoring.outputs.connectionString
-    healthCheckPath: '/api/ai/health'
+    healthCheckPath: '/api/health'
     vnetSubnetId: appSubnetId
     ipSecurityRestrictions: aiIpRestrictions
     appSettings: [

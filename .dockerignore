@@ -22,3 +22,7 @@ uploads
 Thumbs.db
 coverage
 .nyc_output
+
+**/node_modules
+**/dist
+**/.next
