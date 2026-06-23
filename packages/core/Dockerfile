@@ -10,6 +10,12 @@ COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* .npmrc ./
 COPY packages/core/package.json packages/core/
 COPY packages/shared/package.json packages/shared/
 
+# Hoist all dependencies into the root node_modules (npm-style flat layout) so the
+# production stage can copy a single, complete /app/node_modules. pnpm's default
+# isolated linker nests deps under packages/*/node_modules as symlinks into .pnpm,
+# which the production image would not have — causing MODULE_NOT_FOUND at runtime.
+RUN echo 'node-linker=hoisted' >> .npmrc
+
 # Inject Azure Artifacts auth token; strip it after install so the layer has no creds
 ARG AZURE_ARTIFACTS_TOKEN
 RUN if [ -n "${AZURE_ARTIFACTS_TOKEN}" ]; then \
