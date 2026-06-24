@@ -426,6 +426,10 @@ resource kvPipelineRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = i
     principalId: pipelineSpOid
     principalType: 'ServicePrincipal'
   }
+  // keyVaultRes is an 'existing' reference, so Bicep infers no dependency on the
+  // module that creates the vault. Make it explicit so the assignment can't race
+  // ahead of vault creation on a fresh resource group (e.g. first prod deploy).
+  dependsOn: [keyVault]
 }
 
 resource keyVaultRes 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
