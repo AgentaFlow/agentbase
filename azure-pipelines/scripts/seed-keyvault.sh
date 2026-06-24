@@ -57,6 +57,31 @@ or_placeholder() {
 
 echo "Seeding secrets into Key Vault '$KEY_VAULT_NAME'..."
 
+# The deployment step that runs just before this one (re)assigns this principal's
+# 'Key Vault Secrets Officer' role. Newly created Key Vault role assignments can
+# take several minutes to become effective on the *data plane*, so a write that
+# happens too soon fails with ForbiddenByRbac. Probe with a throwaway secret
+# until the data-plane access is live (or give up after ~10 min and surface the
+# real error).
+wait_for_keyvault_rbac() {
+  local attempt=1 max=30
+  while ! az keyvault secret set --vault-name "$KEY_VAULT_NAME" \
+            --name rbac-probe --value ok --output none 2>/dev/null; do
+    if [ "$attempt" -ge "$max" ]; then
+      echo "ERROR: Key Vault '$KEY_VAULT_NAME' data-plane RBAC not effective after $((max * 20))s." >&2
+      # Final attempt without suppression so the real error reaches the log.
+      az keyvault secret set --vault-name "$KEY_VAULT_NAME" --name rbac-probe --value ok --output none
+      exit 1
+    fi
+    echo "  … waiting for Key Vault RBAC to propagate (attempt $attempt/$max)"
+    sleep 20
+    attempt=$((attempt + 1))
+  done
+  echo "  ✔ Key Vault data-plane access confirmed"
+}
+
+wait_for_keyvault_rbac
+
 # --- Connection secrets fetched from the Azure control plane (work even when the
 #     data plane is private) ---
 MONGO_URI=$(az cosmosdb keys list --name "$COSMOS_ACCOUNT" --resource-group "$RESOURCE_GROUP" \

@@ -19,7 +19,7 @@ RUN echo 'node-linker=hoisted' >> .npmrc
 # Inject Azure Artifacts auth token; strip it after install so the layer has no creds
 ARG AZURE_ARTIFACTS_TOKEN
 RUN if [ -n "${AZURE_ARTIFACTS_TOKEN}" ]; then \
-      echo "//pkgs.dev.azure.com/agentaflow/agentbase/_packaging/python/npm/registry/:_authToken=${AZURE_ARTIFACTS_TOKEN}" >> .npmrc; \
+      echo "//pkgs.dev.azure.com/agentaflow/agentbase/_packaging/node/npm/registry/:_authToken=${AZURE_ARTIFACTS_TOKEN}" >> .npmrc; \
     fi
 RUN pnpm install --frozen-lockfile 2>/dev/null || pnpm install
 RUN sed -i '/_authToken/d' .npmrc
